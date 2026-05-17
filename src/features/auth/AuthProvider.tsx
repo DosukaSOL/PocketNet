@@ -1,0 +1,267 @@
+import type { Session, User } from '@supabase/supabase-js';
+import {
+  createContext,
+  type PropsWithChildren,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState
+} from 'react';
+
+import { profileFromRow, profileToRowPatch } from '@/lib/mappers';
+import { previewUserId, seedProfiles } from '@/lib/mockData';
+import { hasSupabaseConfig, supabase } from '@/lib/supabase';
+import type { Profile, UpdateProfileInput } from '@/types/domain';
+
+type AuthContextValue = {
+  session: Session | null;
+  user: User | null;
+  profile: Profile | null;
+  isLoading: boolean;
+  isPreviewMode: boolean;
+  hasSupabaseConfig: boolean;
+  enterPreview: () => void;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, username: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  setProfile: (profile: Profile) => void;
+  patchProfile: (input: UpdateProfileInput) => Promise<Profile>;
+};
+
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+function defaultPreviewProfile() {
+  return seedProfiles.find((profile) => profile.id === previewUserId) ?? seedProfiles[0];
+}
+
+export function AuthProvider({ children }: PropsWithChildren) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPreviewMode, setIsPreviewMode] = useState(!hasSupabaseConfig);
+
+  const loadProfile = useCallback(async (userId: string) => {
+    if (!supabase) {
+      setProfile(defaultPreviewProfile());
+      return;
+    }
+
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (data) {
+      setProfile(profileFromRow(data));
+    }
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function bootstrap() {
+      if (!supabase) {
+        if (mounted) {
+          setProfile(defaultPreviewProfile());
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      const { data } = await supabase.auth.getSession();
+
+      if (!mounted) {
+        return;
+      }
+
+      setSession(data.session);
+
+      if (data.session?.user) {
+        await loadProfile(data.session.user.id);
+      }
+
+      setIsLoading(false);
+    }
+
+    void bootstrap();
+
+    const authSubscription = supabase?.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      if (nextSession?.user) {
+        void loadProfile(nextSession.user.id);
+      } else if (!isPreviewMode) {
+        setProfile(null);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      authSubscription?.data.subscription.unsubscribe();
+    };
+  }, [isPreviewMode, loadProfile]);
+
+  const enterPreview = useCallback(() => {
+    setIsPreviewMode(true);
+    setProfile(defaultPreviewProfile());
+  }, []);
+
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      if (!supabase) {
+        enterPreview();
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        throw error;
+      }
+      setIsPreviewMode(false);
+    },
+    [enterPreview]
+  );
+
+  const signUp = useCallback(async (email: string, password: string, username: string) => {
+    if (!supabase) {
+      throw new Error('Connect Supabase env values before creating real accounts.');
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username
+        }
+      }
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (data.user) {
+      const timestamp = new Date().toISOString();
+      const displayName = username
+        .split(/[-_.\s]/)
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: data.user.id,
+        username,
+        display_name: displayName || username,
+        social_links: {},
+        favorite_systems: [],
+        favorite_games: [],
+        created_at: timestamp,
+        updated_at: timestamp
+      });
+
+      if (profileError) {
+        throw profileError;
+      }
+    }
+  }, []);
+
+  const resetPassword = useCallback(async (email: string) => {
+    if (!supabase) {
+      throw new Error('Password reset requires a configured Supabase project.');
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) {
+      throw error;
+    }
+  }, []);
+
+  const signOut = useCallback(async () => {
+    if (supabase && session) {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+    }
+
+    setSession(null);
+    setProfile(hasSupabaseConfig ? null : defaultPreviewProfile());
+    setIsPreviewMode(!hasSupabaseConfig);
+  }, [session]);
+
+  const patchProfile = useCallback(
+    async (input: UpdateProfileInput) => {
+      if (!profile) {
+        throw new Error('No active profile to update.');
+      }
+
+      const nextProfile: Profile = {
+        ...profile,
+        ...input,
+        avatarUrl: input.avatarUri ?? profile.avatarUrl,
+        bannerUrl: input.bannerUri ?? profile.bannerUrl,
+        updatedAt: new Date().toISOString()
+      };
+
+      setProfile(nextProfile);
+
+      if (supabase && session?.user) {
+        const { error } = await supabase
+          .from('profiles')
+          .update(profileToRowPatch(nextProfile))
+          .eq('id', session.user.id);
+
+        if (error) {
+          setProfile(profile);
+          throw error;
+        }
+      }
+
+      return nextProfile;
+    },
+    [profile, session]
+  );
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      session,
+      user: session?.user ?? null,
+      profile,
+      isLoading,
+      isPreviewMode,
+      hasSupabaseConfig,
+      enterPreview,
+      signIn,
+      signUp,
+      resetPassword,
+      signOut,
+      setProfile,
+      patchProfile
+    }),
+    [
+      enterPreview,
+      isLoading,
+      isPreviewMode,
+      patchProfile,
+      profile,
+      resetPassword,
+      session,
+      signIn,
+      signOut,
+      signUp
+    ]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used inside AuthProvider');
+  }
+  return context;
+}
