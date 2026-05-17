@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Compass, Home, PlusCircle, RadioTower, UserRound } from 'lucide-react-native';
 
-import { colors } from '@/lib/theme';
+import { colors } from '@/design/tokens';
 
 export default function TabsLayout() {
   return (
@@ -9,16 +9,24 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.surface,
+          position: 'absolute',
+          backgroundColor: 'rgba(16, 23, 38, 0.96)',
           borderTopColor: colors.border,
-          minHeight: 68,
-          paddingTop: 8
+          borderTopWidth: 1,
+          minHeight: 76,
+          paddingTop: 9,
+          paddingBottom: 10
         },
-        tabBarActiveTintColor: colors.cyan,
-        tabBarInactiveTintColor: colors.textDim,
+        tabBarActiveTintColor: colors.accentCyan,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '800'
+          lineHeight: 14,
+          fontWeight: '900'
+        },
+        tabBarItemStyle: {
+          borderRadius: 18,
+          marginHorizontal: 2
         }
       }}
     >

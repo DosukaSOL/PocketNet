@@ -1,13 +1,14 @@
 import { router } from 'expo-router';
-import { Plus, Search } from 'lucide-react-native';
+import { Compass, Plus, Search, UsersRound } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 
 import { CommunityCard } from '@/components/CommunityCard';
-import { AppText, Avatar, Button, Card, Row, Screen, TextField } from '@/components/ui';
+import { UserCard } from '@/components/social/UserCard';
+import { AppText, Badge, Button, Card, EmptyState, Row, Screen, SearchBar, Stack, TextArea, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
-import { colors, spacing } from '@/lib/theme';
+import { colors, spacing } from '@/design/tokens';
 
 export default function DiscoverScreen() {
   const { profile } = useAuth();
@@ -22,14 +23,18 @@ export default function DiscoverScreen() {
   const [query, setQuery] = useState('');
   const [communityName, setCommunityName] = useState('');
   const [communityDescription, setCommunityDescription] = useState('');
+  const [creating, setCreating] = useState(false);
   const users = useMemo(() => searchUsers(query).slice(0, 8), [query, searchUsers]);
   const communities = useMemo(() => searchCommunities(query), [query, searchCommunities]);
+  const featuredCommunities = communities.slice(0, 2);
+  const otherCommunities = communities.slice(2);
 
   async function handleCreateCommunity() {
     try {
       if (!communityName.trim()) {
         throw new Error('Name your community first.');
       }
+      setCreating(true);
       const community = await createCommunity({
         name: communityName,
         description: communityDescription || 'A new PocketNet community.'
@@ -39,80 +44,126 @@ export default function DiscoverScreen() {
       router.push(`/community/${community.id}`);
     } catch (error) {
       Alert.alert('Could not create community', error instanceof Error ? error.message : 'Try again.');
+    } finally {
+      setCreating(false);
     }
   }
 
   return (
     <Screen scroll>
-      <AppText variant="heading">Discover</AppText>
-      <TextField
+      <Stack gap={spacing.xs}>
+        <Badge label="Discovery" tone="cyan" icon={Compass} />
+        <AppText variant="display">Find your next handheld circle</AppText>
+        <AppText color={colors.textSecondary}>
+          Search players, device crews, frontend setups, and communities that match how you play.
+        </AppText>
+      </Stack>
+
+      <SearchBar
+        icon={Search}
         placeholder="Search users, devices, frontends, communities"
         value={query}
         onChangeText={setQuery}
       />
 
-      <Card>
-        <Row>
-          <Search color={colors.cyan} size={20} />
-          <AppText variant="title">Players</AppText>
-        </Row>
-        {users.map((user) => (
-          <Row key={user.id} style={styles.userRow}>
-            <Avatar label={user.displayName} uri={user.avatarUrl} />
-            <View style={styles.userMeta}>
-              <AppText>{user.displayName}</AppText>
-              <AppText variant="small" color={colors.textMuted}>
-                @{user.username} · {user.favoriteHandheld ?? 'Handheld player'}
-              </AppText>
-            </View>
-            <Button label="View" compact variant="secondary" onPress={() => router.push(`/user/${user.id}`)} />
-            <Button
-              label="Add"
-              compact
-              disabled={user.id === profile?.id}
-              onPress={() => void sendFriendRequest(user.id)}
-            />
-          </Row>
-        ))}
-      </Card>
+      <Row style={styles.sectionHeader}>
+        <Stack gap={2}>
+          <AppText variant="sectionTitle">Players</AppText>
+          <AppText variant="metadata" color={colors.textMuted}>
+            People, handhelds, and launchers.
+          </AppText>
+        </Stack>
+        <Badge label={`${users.length}`} tone="neutral" />
+      </Row>
 
-      <Card>
-        <Row>
-          <Plus color={colors.lime} size={20} />
-          <AppText variant="title">Create Community</AppText>
+      {users.length ? (
+        users.map((user) => (
+          <UserCard
+            key={user.id}
+            profile={user}
+            actionLabel={user.id === profile?.id ? 'You' : 'Add'}
+            onOpen={() => router.push(`/user/${user.id}`)}
+            onAction={user.id === profile?.id ? undefined : () => void sendFriendRequest(user.id)}
+          />
+        ))
+      ) : (
+        <EmptyState
+          title="No players found"
+          body="Try a device name like Odin, Thor, Retroid, Cocoon, Daijisho, or a username."
+          icon={UsersRound}
+        />
+      )}
+
+      <Card gradient="pocket" elevated>
+        <Row style={styles.sectionHeader}>
+          <Stack gap={2} style={styles.formCopy}>
+            <AppText variant="sectionTitle">Start a Community</AppText>
+            <AppText variant="caption" color={colors.textSecondary}>
+              Create a place for setup notes, compatibility tips, screenshots, and handheld rituals.
+            </AppText>
+          </Stack>
+          <Badge label="Creator tools" tone="purple" />
         </Row>
         <TextField label="Name" value={communityName} onChangeText={setCommunityName} placeholder="Thor Lab" />
-        <TextField
+        <TextArea
           label="Description"
           value={communityDescription}
           onChangeText={setCommunityDescription}
           placeholder="What belongs here?"
-          multiline
         />
-        <Button label="Create" icon={Plus} onPress={() => void handleCreateCommunity()} />
+        <Button label="Create community" icon={Plus} loading={creating} onPress={() => void handleCreateCommunity()} />
       </Card>
 
-      <AppText variant="title">Communities</AppText>
-      {communities.map((community) => (
-        <CommunityCard
-          key={community.id}
-          community={community}
-          onOpen={() => router.push(`/community/${community.id}`)}
-          onJoin={() => void joinCommunity(community.id)}
-          onLeave={() => void leaveCommunity(community.id)}
+      <Row style={styles.sectionHeader}>
+        <Stack gap={2}>
+          <AppText variant="sectionTitle">Communities</AppText>
+          <AppText variant="metadata" color={colors.textMuted}>
+            Built around handheld identity, not generic groups.
+          </AppText>
+        </Stack>
+        <Badge label={`${communities.length}`} tone="neutral" />
+      </Row>
+
+      {communities.length ? (
+        <>
+          {featuredCommunities.map((community) => (
+            <CommunityCard
+              key={community.id}
+              community={community}
+              featured
+              onOpen={() => router.push(`/community/${community.id}`)}
+              onJoin={() => void joinCommunity(community.id)}
+              onLeave={() => void leaveCommunity(community.id)}
+            />
+          ))}
+          {otherCommunities.map((community) => (
+            <CommunityCard
+              key={community.id}
+              community={community}
+              onOpen={() => router.push(`/community/${community.id}`)}
+              onJoin={() => void joinCommunity(community.id)}
+              onLeave={() => void leaveCommunity(community.id)}
+            />
+          ))}
+        </>
+      ) : (
+        <EmptyState
+          title="No communities match"
+          body="Clear the search or create the community you wanted to find."
+          icon={Compass}
+          tone="purple"
         />
-      ))}
+      )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  userRow: {
-    flexWrap: 'wrap'
+  sectionHeader: {
+    justifyContent: 'space-between',
+    alignItems: 'center'
   },
-  userMeta: {
-    flex: 1,
-    minWidth: 120,
-    gap: spacing.xs
+  formCopy: {
+    flex: 1
   }
 });

@@ -1,12 +1,14 @@
-import { ImagePlus, Send } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { RadioTower, Users } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 
-import { AppText, Button, Card, Row, Screen, TextField } from '@/components/ui';
+import { StatusComposer } from '@/components/social/StatusComposer';
+import { AppText, Badge, Button, Card, PressableScale, Row, Screen, Stack } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
 import { pickImage } from '@/lib/media';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, radius, spacing } from '@/design/tokens';
 
 export default function CreateScreen() {
   const { profile } = useAuth();
@@ -37,7 +39,8 @@ export default function CreateScreen() {
       setBody('');
       setImageUri(undefined);
       setCommunityId(undefined);
-      Alert.alert('Posted', 'Your update is live.');
+      Alert.alert('Posted', 'Your PocketNet update is live.');
+      router.push('/(tabs)/home');
     } catch (error) {
       Alert.alert('Could not post', error instanceof Error ? error.message : 'Try again.');
     } finally {
@@ -47,74 +50,123 @@ export default function CreateScreen() {
 
   return (
     <Screen scroll>
-      <AppText variant="heading">New Post</AppText>
-      <Card elevated>
-        <TextField
-          label="Status"
-          multiline
-          value={body}
-          onChangeText={setBody}
-          placeholder="Share a setup tweak, screenshot note, or what you are playing."
-        />
-        <View style={styles.communityWrap}>
-          <AppText variant="small" color={colors.textMuted}>Community</AppText>
-          <Row style={styles.chips}>
-            <Pressable
-              onPress={() => setCommunityId(undefined)}
-              style={[styles.chip, !communityId && styles.activeChip]}
-            >
-              <Text style={[styles.chipText, !communityId && styles.activeText]}>Profile</Text>
-            </Pressable>
-            {joinedCommunities.map((community) => (
-              <Pressable
-                key={community.id}
-                onPress={() => setCommunityId(community.id)}
-                style={[styles.chip, communityId === community.id && styles.activeChip]}
-              >
-                <Text style={[styles.chipText, communityId === community.id && styles.activeText]}>
-                  {community.name}
-                </Text>
-              </Pressable>
-            ))}
-          </Row>
-        </View>
-        {imageUri ? <AppText color={colors.lime}>Image selected</AppText> : null}
-        <Row>
-          <Button label="Image" icon={ImagePlus} variant="secondary" onPress={() => void chooseImage()} />
-          <Button label="Publish" icon={Send} loading={loading} onPress={() => void publish()} />
+      <Stack gap={spacing.xs}>
+        <Badge label="Composer" tone="pink" icon={RadioTower} />
+        <AppText variant="display">Share the moment</AppText>
+        <AppText color={colors.textSecondary}>
+          Post to your profile or drop a screenshot note into one of your communities.
+        </AppText>
+      </Stack>
+
+      <Card>
+        <Row style={styles.sectionHeader}>
+          <Stack gap={2}>
+            <AppText variant="sectionTitle">Destination</AppText>
+            <AppText variant="metadata" color={colors.textMuted}>
+              Pick where this update should live.
+            </AppText>
+          </Stack>
+          <Badge label={communityId ? 'Community' : 'Profile'} tone={communityId ? 'purple' : 'cyan'} />
         </Row>
+        <Row style={styles.chips}>
+          <DestinationChip label="Profile" active={!communityId} onPress={() => setCommunityId(undefined)} />
+          {joinedCommunities.map((community) => (
+            <DestinationChip
+              key={community.id}
+              label={community.name}
+              active={communityId === community.id}
+              onPress={() => setCommunityId(community.id)}
+            />
+          ))}
+        </Row>
+        {!joinedCommunities.length ? (
+          <View style={styles.inlineEmpty}>
+            <Users color={colors.accentPurple} size={20} />
+            <Stack gap={2} style={styles.inlineEmptyCopy}>
+              <AppText variant="cardTitle">No joined communities yet</AppText>
+              <AppText variant="caption" color={colors.textSecondary}>
+                You can still post to your profile, or discover a community first.
+              </AppText>
+            </Stack>
+            <Button label="Discover" compact variant="secondary" onPress={() => router.push('/(tabs)/discover')} />
+          </View>
+        ) : null}
       </Card>
+
+      <StatusComposer
+        profile={profile}
+        value={body}
+        onChangeText={setBody}
+        imageUri={imageUri}
+        onChooseImage={() => void chooseImage()}
+        onRemoveImage={() => setImageUri(undefined)}
+        onSubmit={() => void publish()}
+        loading={loading}
+        title={communityId ? 'Community post' : 'Profile post'}
+      />
     </Screen>
   );
 }
 
+function DestinationChip({
+  label,
+  active,
+  onPress
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <PressableScale onPress={onPress} style={[styles.chip, active && styles.activeChip]}>
+      <Text style={[styles.chipLabel, active && styles.activeChipLabel]}>{label}</Text>
+    </PressableScale>
+  );
+}
+
 const styles = StyleSheet.create({
-  communityWrap: {
-    gap: spacing.sm
+  sectionHeader: {
+    justifyContent: 'space-between',
+    alignItems: 'center'
   },
   chips: {
     flexWrap: 'wrap'
   },
   chip: {
-    minHeight: 34,
+    minHeight: 38,
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.surfaceStrong,
     paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center'
   },
   activeChip: {
-    borderColor: colors.cyan,
-    backgroundColor: `${colors.cyan}18`
+    borderColor: `${colors.accentCyan}AA`,
+    backgroundColor: `${colors.accentCyan}18`
   },
-  chipText: {
-    color: colors.textMuted,
-    fontWeight: '800'
+  chipLabel: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '900'
   },
-  activeText: {
-    color: colors.cyan
+  activeChipLabel: {
+    color: colors.accentCyan
   },
-  chipsText: {}
+  inlineEmpty: {
+    minHeight: 76,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm
+  },
+  inlineEmptyCopy: {
+    flex: 1
+  }
 });

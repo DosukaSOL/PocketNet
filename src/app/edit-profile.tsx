@@ -1,14 +1,15 @@
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { ImagePlus, Save } from 'lucide-react-native';
+import { ArrowLeft, ImagePlus, Link as LinkIcon, Save, Sparkles } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
 import { ChipPicker } from '@/components/ChipPicker';
-import { AppText, Button, Card, Row, Screen, TextField } from '@/components/ui';
+import { AppText, Badge, Button, Card, Row, Screen, Stack, TextArea, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { FRONTENDS, HANDHELDS, REGIONS, SAMPLE_GAMES, SYSTEMS } from '@/lib/catalog';
 import { pickImage, uploadImage } from '@/lib/media';
-import { colors } from '@/lib/theme';
+import { colors, radius, spacing } from '@/design/tokens';
 
 export default function EditProfileScreen() {
   const { profile, patchProfile } = useAuth();
@@ -101,45 +102,88 @@ export default function EditProfileScreen() {
 
   return (
     <Screen scroll>
-      <AppText variant="heading">Edit Profile</AppText>
-      <Card>
-        <TextField label="Display name" value={displayName} onChangeText={setDisplayName} />
-        <TextField label="Username" value={username} autoCapitalize="none" onChangeText={setUsername} />
-        <TextField label="Bio" value={bio} onChangeText={setBio} multiline />
-        <Row>
+      <Row style={styles.topActions}>
+        <Button label="Back" icon={ArrowLeft} compact variant="ghost" onPress={() => router.back()} />
+        <Button label="Save" icon={Save} compact loading={saving} onPress={() => void save()} />
+      </Row>
+
+      <Stack gap={spacing.xs}>
+        <Badge label="Profile studio" tone="cyan" icon={Sparkles} />
+        <AppText variant="display">Tune your PocketCard</AppText>
+        <AppText color={colors.textSecondary}>
+          Make the public version of your handheld setup feel useful, personal, and screenshot-worthy.
+        </AppText>
+      </Stack>
+
+      <Card elevated>
+        <View style={styles.previewBanner}>
+          {bannerUri || activeProfile.bannerUrl ? (
+            <Image source={{ uri: bannerUri ?? activeProfile.bannerUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          ) : (
+            <View style={styles.bannerFallback} />
+          )}
+        </View>
+        <Row style={styles.mediaActions}>
+          <View style={styles.avatarPreview}>
+            {avatarUri || activeProfile.avatarUrl ? (
+              <Image source={{ uri: avatarUri ?? activeProfile.avatarUrl }} style={styles.avatarImage} contentFit="cover" />
+            ) : (
+              <AppText variant="sectionTitle">{displayName.slice(0, 2).toUpperCase() || 'PN'}</AppText>
+            )}
+          </View>
+          <Stack gap={spacing.xs} style={styles.mediaCopy}>
+            <AppText variant="sectionTitle">Profile media</AppText>
+            <AppText variant="caption" color={colors.textSecondary}>
+              Banners should read clearly behind text; avatars should work at small sizes.
+            </AppText>
+          </Stack>
+        </Row>
+        <Row style={styles.mediaButtons}>
           <Button label="Avatar" icon={ImagePlus} variant="secondary" onPress={() => void chooseAvatar()} />
           <Button label="Banner" icon={ImagePlus} variant="secondary" onPress={() => void chooseBanner()} />
         </Row>
-        {avatarUri ? <AppText color={colors.lime}>New avatar selected</AppText> : null}
-        {bannerUri ? <AppText color={colors.lime}>New banner selected</AppText> : null}
       </Card>
+
       <Card>
-        <AppText variant="title">Region</AppText>
+        <AppText variant="sectionTitle">Public Identity</AppText>
+        <TextField label="Display name" value={displayName} onChangeText={setDisplayName} />
+        <TextField label="Username" value={username} autoCapitalize="none" onChangeText={setUsername} />
+        <TextArea label="Bio" value={bio} onChangeText={setBio} placeholder="What should other handheld players know?" />
+      </Card>
+
+      <Card>
+        <AppText variant="sectionTitle">Region</AppText>
         <ChipPicker options={REGIONS} value={region} onChange={(value) => setRegion(String(value))} />
       </Card>
       <Card>
-        <AppText variant="title">Handheld</AppText>
+        <AppText variant="sectionTitle">Handheld</AppText>
         <ChipPicker options={HANDHELDS} value={favoriteHandheld} onChange={(value) => setFavoriteHandheld(String(value))} />
       </Card>
       <Card>
-        <AppText variant="title">Frontend</AppText>
+        <AppText variant="sectionTitle">Frontend</AppText>
         <ChipPicker options={FRONTENDS} value={favoriteFrontend} onChange={(value) => setFavoriteFrontend(String(value))} />
       </Card>
       <Card>
-        <AppText variant="title">Systems</AppText>
+        <AppText variant="sectionTitle">Systems</AppText>
         <ChipPicker options={SYSTEMS} value={favoriteSystems} multi onChange={(value) => setFavoriteSystems(value as string[])} />
       </Card>
       <Card>
-        <AppText variant="title">Favorite Games</AppText>
+        <AppText variant="sectionTitle">Favorite Games</AppText>
         <ChipPicker options={SAMPLE_GAMES} value={favoriteGames} multi onChange={(value) => setFavoriteGames(value as string[])} />
       </Card>
+
       <Card>
+        <AppText variant="sectionTitle">Current Status</AppText>
         <TextField label="Currently playing" value={currentGame} onChangeText={setCurrentGame} />
-        <TextField label="Current status" value={currentStatus} onChangeText={setCurrentStatus} />
-        <TextField label="Setup / about" value={setupNotes} onChangeText={setSetupNotes} multiline />
+        <TextField label="Status line" value={currentStatus} onChangeText={setCurrentStatus} />
+        <TextArea label="Setup / about" value={setupNotes} onChangeText={setSetupNotes} />
       </Card>
+
       <Card>
-        <AppText variant="title">Social Links</AppText>
+        <Row>
+          <LinkIcon color={colors.accentPurple} size={20} />
+          <AppText variant="sectionTitle">Social Links</AppText>
+        </Row>
         <TextField label="X / Twitter" value={twitter} onChangeText={setTwitter} autoCapitalize="none" />
         <TextField label="Discord" value={discord} onChangeText={setDiscord} autoCapitalize="none" />
         <TextField label="Twitch" value={twitch} onChangeText={setTwitch} autoCapitalize="none" />
@@ -147,8 +191,53 @@ export default function EditProfileScreen() {
         <TextField label="GitHub" value={github} onChangeText={setGithub} autoCapitalize="none" />
         <TextField label="Website" value={website} onChangeText={setWebsite} autoCapitalize="none" />
       </Card>
+
       <Button label="Save profile" icon={Save} loading={saving} onPress={() => void save()} />
       <Button label="Cancel" variant="ghost" onPress={() => router.back()} />
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  topActions: {
+    justifyContent: 'space-between'
+  },
+  previewBanner: {
+    height: 144,
+    marginHorizontal: -spacing.md,
+    marginTop: -spacing.md,
+    backgroundColor: colors.surfaceStrong
+  },
+  bannerFallback: {
+    flex: 1,
+    backgroundColor: colors.backgroundElevated,
+    borderBottomColor: `${colors.accentCyan}44`,
+    borderBottomWidth: 1
+  },
+  mediaActions: {
+    alignItems: 'flex-end',
+    marginTop: -spacing.xl
+  },
+  avatarPreview: {
+    width: 82,
+    height: 82,
+    borderRadius: radius.avatar,
+    borderWidth: 3,
+    borderColor: colors.accentCyan,
+    backgroundColor: colors.surfaceStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden'
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%'
+  },
+  mediaCopy: {
+    flex: 1,
+    paddingBottom: spacing.xs
+  },
+  mediaButtons: {
+    flexWrap: 'wrap'
+  }
+});

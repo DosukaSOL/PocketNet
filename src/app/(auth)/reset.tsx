@@ -1,25 +1,28 @@
 import { router } from 'expo-router';
-import { KeyRound } from 'lucide-react-native';
+import { KeyRound, Mail, ShieldCheck } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { Button, Card, AppText, Screen, TextField } from '@/components/ui';
+import { AppText, Badge, Button, Card, ErrorBanner, Row, Screen, Stack, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { colors } from '@/lib/theme';
+import { colors, spacing } from '@/design/tokens';
 
 export default function ResetScreen() {
   const { resetPassword, hasSupabaseConfig } = useAuth();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [notice, setNotice] = useState<string | undefined>();
+  const [error, setError] = useState<string | undefined>();
 
   async function handleReset() {
     try {
+      setError(undefined);
+      setNotice(undefined);
       setLoading(true);
       await resetPassword(email.trim());
-      Alert.alert('Reset email sent', 'Follow the link from Supabase Auth to set a new password.');
-      router.back();
-    } catch (error) {
-      Alert.alert('Could not send reset', error instanceof Error ? error.message : 'Try again.');
+      setNotice('Reset email sent. Follow the secure link from Supabase Auth to set a new password.');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Try again.');
     } finally {
       setLoading(false);
     }
@@ -27,11 +30,26 @@ export default function ResetScreen() {
 
   return (
     <Screen scroll>
-      <AppText variant="heading">Reset Password</AppText>
-      <AppText color={colors.textMuted}>Use the email attached to your PocketNet account.</AppText>
-      <Card>
+      <Stack gap={spacing.xs}>
+        <Badge label="Account recovery" tone="purple" icon={KeyRound} />
+        <AppText variant="display">Reset password</AppText>
+        <AppText color={colors.textSecondary}>Use the email attached to your PocketNet account.</AppText>
+      </Stack>
+
+      {error ? <ErrorBanner body={error} /> : null}
+      {notice ? (
+        <Card gradient="pocket">
+          <Row>
+            <ShieldCheck color={colors.success} size={20} />
+            <AppText color={colors.textSecondary} style={styles.noticeCopy}>{notice}</AppText>
+          </Row>
+        </Card>
+      ) : null}
+
+      <Card elevated>
         <TextField
           label="Email"
+          leftIcon={Mail}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -45,8 +63,19 @@ export default function ResetScreen() {
           disabled={!hasSupabaseConfig}
           onPress={() => void handleReset()}
         />
+        {!hasSupabaseConfig ? (
+          <AppText variant="caption" color={colors.textMuted}>
+            Password reset needs Supabase Auth configured.
+          </AppText>
+        ) : null}
       </Card>
       <Button label="Back" variant="ghost" onPress={() => router.back()} />
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  noticeCopy: {
+    flex: 1
+  }
+});

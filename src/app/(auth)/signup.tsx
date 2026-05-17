@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
-import { UserPlus } from 'lucide-react-native';
+import { AtSign, Mail, ShieldCheck, UserPlus } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { AppText, Button, Card, Screen, TextField } from '@/components/ui';
+import { AppText, Badge, Button, Card, ErrorBanner, Row, Screen, Stack, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { colors } from '@/lib/theme';
+import { colors, spacing } from '@/design/tokens';
 
 export default function SignupScreen() {
   const { signUp, hasSupabaseConfig } = useAuth();
@@ -13,15 +13,18 @@ export default function SignupScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [notice, setNotice] = useState<string | undefined>();
+  const [error, setError] = useState<string | undefined>();
 
   async function handleSignup() {
     try {
+      setError(undefined);
+      setNotice(undefined);
       setLoading(true);
       await signUp(email.trim(), password, username.trim().toLowerCase());
-      Alert.alert('Check your email', 'Confirm your account, then log in to finish setup.');
-      router.replace('/(auth)/login');
-    } catch (error) {
-      Alert.alert('Could not create account', error instanceof Error ? error.message : 'Try again.');
+      setNotice('Check your email, confirm your account, then log in to finish setup.');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Try again.');
     } finally {
       setLoading(false);
     }
@@ -29,13 +32,28 @@ export default function SignupScreen() {
 
   return (
     <Screen scroll>
-      <AppText variant="heading">Create Account</AppText>
-      <AppText color={colors.textMuted}>
-        Choose a handle that feels at home in handheld communities.
-      </AppText>
+      <Stack gap={spacing.xs}>
+        <Badge label="Create identity" tone="cyan" icon={UserPlus} />
+        <AppText variant="display">Claim your PocketNet handle</AppText>
+        <AppText color={colors.textSecondary}>
+          Choose a username that looks good on profiles, posts, comments, and community member lists.
+        </AppText>
+      </Stack>
+
+      {error ? <ErrorBanner body={error} /> : null}
+      {notice ? (
+        <Card gradient="pocket">
+          <Row>
+            <ShieldCheck color={colors.success} size={20} />
+            <AppText color={colors.textSecondary} style={styles.noticeCopy}>{notice}</AppText>
+          </Row>
+        </Card>
+      ) : null}
+
       <Card elevated>
         <TextField
           label="Email"
+          leftIcon={Mail}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -44,6 +62,7 @@ export default function SignupScreen() {
         />
         <TextField
           label="Username"
+          leftIcon={AtSign}
           autoCapitalize="none"
           value={username}
           onChangeText={setUsername}
@@ -57,14 +76,14 @@ export default function SignupScreen() {
           placeholder="At least 8 characters"
         />
         <Button
-          label="Sign up"
+          label="Create account"
           icon={UserPlus}
           onPress={() => void handleSignup()}
           loading={loading}
           disabled={!hasSupabaseConfig}
         />
         {!hasSupabaseConfig ? (
-          <AppText variant="small" color={colors.textMuted}>
+          <AppText variant="caption" color={colors.textMuted}>
             Add Supabase public env values before creating production accounts.
           </AppText>
         ) : null}
@@ -73,3 +92,9 @@ export default function SignupScreen() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  noticeCopy: {
+    flex: 1
+  }
+});

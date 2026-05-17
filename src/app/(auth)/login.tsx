@@ -1,26 +1,29 @@
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { LogIn, Sparkles } from 'lucide-react-native';
+import { Gamepad2, LogIn, Mail, ShieldCheck, Sparkles } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { Button, Card, AppText, Screen, TextField } from '@/components/ui';
+import { AppText, Badge, Button, Card, ErrorBanner, Row, Screen, Stack, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { colors, spacing } from '@/lib/theme';
+import { colors, gradients, radius, spacing } from '@/design/tokens';
 
 export default function LoginScreen() {
   const { signIn, enterPreview, hasSupabaseConfig } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | undefined>();
 
   async function handleLogin() {
     try {
+      setError(undefined);
       setLoading(true);
       await signIn(email.trim(), password);
       router.replace('/(tabs)/home');
-    } catch (error) {
-      Alert.alert('Could not sign in', error instanceof Error ? error.message : 'Try again.');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Try again.');
     } finally {
       setLoading(false);
     }
@@ -33,21 +36,30 @@ export default function LoginScreen() {
 
   return (
     <Screen scroll>
-      <View style={styles.hero}>
-        <Image
-          source={require('@/assets/images/pocketnet-logo.png')}
-          style={styles.logo}
-          contentFit="contain"
-        />
-        <AppText variant="heading">PocketNet</AppText>
-        <AppText color={colors.textMuted} style={styles.center}>
-          A handheld-native social layer for setups, screenshots, friends, and communities.
-        </AppText>
-      </View>
+      <Card gradient="pocket" elevated style={styles.hero}>
+        <LinearGradient colors={gradients.aurora} style={styles.heroGlow} />
+        <Image source={require('@/assets/images/pocketnet-logo.png')} style={styles.logo} contentFit="contain" />
+        <Stack gap={spacing.sm} style={styles.heroStack}>
+          <Badge label="PocketNet public beta" tone="cyan" icon={Gamepad2} />
+          <AppText variant="display" style={styles.center}>Handheld-first social</AppText>
+          <AppText color={colors.textSecondary} style={styles.center}>
+            Profiles, screenshots, friends, and communities for Android gaming handhelds.
+          </AppText>
+        </Stack>
+      </Card>
+
+      {error ? <ErrorBanner body={error} /> : null}
 
       <Card elevated>
+        <Stack gap={spacing.xs}>
+          <AppText variant="sectionTitle">Welcome back</AppText>
+          <AppText color={colors.textSecondary}>
+            Sign in to sync your PocketCard, feed, communities, and ThorLink status.
+          </AppText>
+        </Stack>
         <TextField
           label="Email"
+          leftIcon={Mail}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -62,41 +74,55 @@ export default function LoginScreen() {
           placeholder="Your password"
         />
         <Button label="Log in" icon={LogIn} onPress={() => void handleLogin()} loading={loading} />
-        <Button
-          label="Preview beta"
-          icon={Sparkles}
-          variant="secondary"
-          onPress={handlePreview}
-        />
-        {!hasSupabaseConfig ? (
-          <AppText variant="small" color={colors.textMuted}>
-            Supabase is not configured yet, so preview mode is enabled for local QA.
-          </AppText>
-        ) : null}
+        <Row style={styles.linkRow}>
+          <Button label="Create account" compact variant="ghost" onPress={() => router.push('/(auth)/signup')} />
+          <Button label="Reset password" compact variant="ghost" onPress={() => router.push('/(auth)/reset')} />
+        </Row>
       </Card>
 
-      <View style={styles.links}>
-        <Button label="Create account" variant="ghost" onPress={() => router.push('/(auth)/signup')} />
-        <Button label="Reset password" variant="ghost" onPress={() => router.push('/(auth)/reset')} />
-      </View>
+      <Card>
+        <Row>
+          <ShieldCheck color={hasSupabaseConfig ? colors.success : colors.warning} size={20} />
+          <Stack gap={2} style={styles.previewCopy}>
+            <AppText variant="cardTitle">Local preview mode</AppText>
+            <AppText variant="caption" color={colors.textSecondary}>
+              {hasSupabaseConfig
+                ? 'Preview remains available for UI QA without touching production data.'
+                : 'Supabase is not configured yet, so preview mode is enabled for local QA.'}
+            </AppText>
+          </Stack>
+        </Row>
+        <Button label="Preview beta" icon={Sparkles} variant="secondary" onPress={handlePreview} />
+      </Card>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   hero: {
+    minHeight: 300,
     alignItems: 'center',
-    gap: spacing.sm,
-    paddingTop: spacing.xl
+    justifyContent: 'center',
+    position: 'relative'
+  },
+  heroGlow: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: radius.card
   },
   logo: {
-    width: 152,
-    height: 152
+    width: 150,
+    height: 150
   },
   center: {
     textAlign: 'center'
   },
-  links: {
-    gap: spacing.sm
+  heroStack: {
+    alignItems: 'center'
+  },
+  linkRow: {
+    flexWrap: 'wrap'
+  },
+  previewCopy: {
+    flex: 1
   }
 });

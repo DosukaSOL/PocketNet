@@ -1,88 +1,127 @@
 import { router } from 'expo-router';
-import { Settings } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import { Settings, UserRound } from 'lucide-react-native';
+import { useState } from 'react';
+import { StyleSheet } from 'react-native';
 
+import { CommunityCard } from '@/components/CommunityCard';
 import { PostCard } from '@/components/PostCard';
-import { ProfileHeader } from '@/components/ProfileHeader';
-import { AppText, Avatar, Badge, Button, Card, EmptyState, Row, Screen } from '@/components/ui';
+import { ProfileHeader, type ProfileTab } from '@/components/ProfileHeader';
+import { SetupCard } from '@/components/social/SetupCard';
+import { UserCard } from '@/components/social/UserCard';
+import { AppText, Button, EmptyState, Row, Screen, Stack } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
-import { colors, spacing } from '@/lib/theme';
+import { colors, spacing } from '@/design/tokens';
 
 export default function ProfileScreen() {
   const { profile } = useAuth();
-  const { getProfilePosts, getFriends } = usePocketData();
+  const { getProfilePosts, getFriends, communities, joinCommunity, leaveCommunity } = usePocketData();
+  const [tab, setTab] = useState<ProfileTab>('posts');
 
   if (!profile) {
     return (
       <Screen>
-        <EmptyState title="No profile" body="Log in or enter preview mode to create your PocketNet profile." />
+        <EmptyState
+          title="No profile"
+          body="Log in or enter preview mode to create your PocketNet profile."
+          icon={UserRound}
+        />
       </Screen>
     );
   }
 
   const posts = getProfilePosts(profile.id);
   const friends = getFriends();
+  const memberCommunities = communities.filter((community) => community.memberIds.includes(profile.id));
 
   return (
     <Screen scroll>
       <Row style={styles.headerActions}>
-        <View style={styles.headerTitle}>
-          <AppText variant="heading">Profile</AppText>
-          <AppText color={colors.textMuted}>Your public handheld identity.</AppText>
-        </View>
+        <Stack gap={2} style={styles.headerTitle}>
+          <AppText variant="metadata" color={colors.textMuted}>Your identity</AppText>
+          <AppText variant="screenTitle">Profile</AppText>
+        </Stack>
         <Button label="Settings" icon={Settings} compact variant="secondary" onPress={() => router.push('/settings')} />
       </Row>
 
       <ProfileHeader
         profile={profile}
         isCurrentUser
+        postCount={posts.length}
+        friendCount={friends.length}
+        communityCount={memberCommunities.length}
+        activeTab={tab}
+        onTabChange={setTab}
         onEdit={() => router.push('/edit-profile')}
       />
 
-      <Card>
-        <Row style={styles.statRow}>
-          <View>
-            <AppText variant="title">{posts.length}</AppText>
-            <AppText variant="small" color={colors.textMuted}>Posts</AppText>
-          </View>
-          <View>
-            <AppText variant="title">{friends.length}</AppText>
-            <AppText variant="small" color={colors.textMuted}>Friends</AppText>
-          </View>
-          <View>
-            <AppText variant="title">{profile.favoriteSystems.length}</AppText>
-            <AppText variant="small" color={colors.textMuted}>Systems</AppText>
-          </View>
-        </Row>
-      </Card>
+      {tab === 'posts' ? (
+        <Stack gap={spacing.md}>
+          <Row style={styles.sectionHeader}>
+            <AppText variant="sectionTitle">Profile Posts</AppText>
+            <Button label="New post" compact onPress={() => router.push('/(tabs)/create')} />
+          </Row>
+          {posts.length ? (
+            posts.map((post) => <PostCard key={post.id} post={post} />)
+          ) : (
+            <EmptyState
+              title="No posts yet"
+              body="Share your setup, a status update, or a screenshot from the Post tab."
+              action={<Button label="Create first post" onPress={() => router.push('/(tabs)/create')} />}
+            />
+          )}
+        </Stack>
+      ) : null}
 
-      <Card>
-        <AppText variant="title">Friends</AppText>
-        {friends.length ? (
-          friends.map((friend) => (
-            <Row key={friend.id}>
-              <Avatar label={friend.displayName} uri={friend.avatarUrl} />
-              <View style={styles.friendMeta}>
-                <AppText>{friend.displayName}</AppText>
-                <Row style={styles.friendBadges}>
-                  {friend.favoriteHandheld ? <Badge label={friend.favoriteHandheld} tone="cyan" /> : null}
-                  {friend.favoriteFrontend ? <Badge label={friend.favoriteFrontend} tone="blue" /> : null}
-                </Row>
-              </View>
-            </Row>
-          ))
-        ) : (
-          <AppText color={colors.textMuted}>No friends yet.</AppText>
-        )}
-      </Card>
+      {tab === 'setup' ? (
+        <Stack gap={spacing.md}>
+          <SetupCard profile={profile} />
+          <Stack>
+            <AppText variant="sectionTitle">Friends</AppText>
+            {friends.length ? (
+              friends.map((friend) => (
+                <UserCard
+                  key={friend.id}
+                  profile={friend}
+                  actionLabel="View"
+                  onOpen={() => router.push(`/user/${friend.id}`)}
+                  onAction={() => router.push(`/user/${friend.id}`)}
+                />
+              ))
+            ) : (
+              <AppText color={colors.textMuted}>
+                No friends yet. Discover players to make this profile feel lived-in.
+              </AppText>
+            )}
+          </Stack>
+        </Stack>
+      ) : null}
 
-      <AppText variant="title">Profile Posts</AppText>
-      {posts.length ? (
-        posts.map((post) => <PostCard key={post.id} post={post} />)
-      ) : (
-        <EmptyState title="No posts yet" body="Share your setup or current game from the Post tab." />
-      )}
+      {tab === 'communities' ? (
+        <Stack gap={spacing.md}>
+          <Row style={styles.sectionHeader}>
+            <AppText variant="sectionTitle">Communities</AppText>
+            <Button label="Discover" compact variant="secondary" onPress={() => router.push('/(tabs)/discover')} />
+          </Row>
+          {memberCommunities.length ? (
+            memberCommunities.map((community) => (
+              <CommunityCard
+                key={community.id}
+                community={community}
+                onOpen={() => router.push(`/community/${community.id}`)}
+                onJoin={() => void joinCommunity(community.id)}
+                onLeave={() => void leaveCommunity(community.id)}
+              />
+            ))
+          ) : (
+            <EmptyState
+              title="No communities yet"
+              body="Join a place for your device, favorite frontend, or current handheld obsession."
+              action={<Button label="Find communities" onPress={() => router.push('/(tabs)/discover')} />}
+            />
+          )}
+        </Stack>
+      ) : null}
     </Screen>
   );
 }
@@ -93,16 +132,10 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     flex: 1,
-    gap: spacing.xs
+    minWidth: 0
   },
-  statRow: {
-    justifyContent: 'space-around'
-  },
-  friendMeta: {
-    flex: 1,
-    gap: spacing.xs
-  },
-  friendBadges: {
-    flexWrap: 'wrap'
+  sectionHeader: {
+    justifyContent: 'space-between',
+    alignItems: 'center'
   }
 });

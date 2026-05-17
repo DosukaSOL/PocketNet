@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
-import { LogOut, ShieldCheck } from 'lucide-react-native';
-import { Alert } from 'react-native';
+import type { LucideIcon } from 'lucide-react-native';
+import { ArrowLeft, Bell, Eye, LogOut, Palette, ShieldCheck, UserRound } from 'lucide-react-native';
+import type { ReactNode } from 'react';
+import { Alert, StyleSheet } from 'react-native';
 
-import { AppText, Button, Card, Screen } from '@/components/ui';
+import { AppText, Badge, Button, Card, Row, Screen, Stack } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { colors } from '@/lib/theme';
+import { colors, spacing } from '@/design/tokens';
 
 export default function SettingsScreen() {
   const { signOut, isPreviewMode, hasSupabaseConfig } = useAuth();
@@ -20,26 +22,97 @@ export default function SettingsScreen() {
 
   return (
     <Screen scroll>
-      <Button label="Back" compact variant="ghost" onPress={() => router.back()} />
-      <AppText variant="heading">Settings</AppText>
-      <Card>
-        <ShieldCheck color={colors.lime} size={24} />
-        <AppText variant="title">Security</AppText>
-        <AppText color={colors.textMuted}>
-          PocketNet stores sessions through Supabase Auth and only expects public mobile-safe env values in the client.
+      <Button label="Back" icon={ArrowLeft} compact variant="ghost" onPress={() => router.back()} />
+      <Stack gap={spacing.xs}>
+        <Badge label="Settings" tone="neutral" />
+        <AppText variant="display">PocketNet controls</AppText>
+        <AppText color={colors.textSecondary}>
+          Account, profile, privacy, safety, and beta release details.
         </AppText>
-        <AppText variant="small" color={colors.textMuted}>
-          Mode: {isPreviewMode ? 'local preview' : 'Supabase'} · Supabase config: {hasSupabaseConfig ? 'ready' : 'missing'}
+      </Stack>
+
+      <SettingsGroup
+        icon={UserRound}
+        title="Account"
+        body="Manage your public profile, identity badges, and PocketCard details."
+        action={<Button label="Edit profile" variant="secondary" onPress={() => router.push('/edit-profile')} />}
+      />
+
+      <SettingsGroup
+        icon={ShieldCheck}
+        title="Security"
+        body="PocketNet stores sessions through Supabase Auth and only expects public mobile-safe env values in the client."
+        meta={`Mode: ${isPreviewMode ? 'local preview' : 'Supabase'} · Supabase config: ${hasSupabaseConfig ? 'ready' : 'missing'}`}
+      />
+
+      <SettingsGroup
+        icon={Eye}
+        title="Privacy & Safety"
+        body="Profile details are public by design. Manual current-game status can be cleared any time from Edit Profile. Blocks and reports are private moderation signals."
+      />
+
+      <SettingsGroup
+        icon={Bell}
+        title="Notifications"
+        body="In-app notifications are available for friend and social activity. Push notifications are planned for a later production milestone."
+        meta="Push: documented future work"
+      />
+
+      <SettingsGroup
+        icon={Palette}
+        title="Appearance"
+        body="PocketNet currently uses an OLED-first dark interface tuned for Android handhelds. Theme switching is on the roadmap."
+        meta="Theme: PocketNet OLED"
+      />
+
+      <Card gradient="danger">
+        <AppText variant="sectionTitle">Session</AppText>
+        <AppText color={colors.textSecondary}>
+          Sign out of this device. Preview data remains local to the app session.
         </AppText>
+        <Button label="Sign out" icon={LogOut} variant="danger" onPress={() => void handleSignOut()} />
       </Card>
-      <Card>
-        <AppText variant="title">Privacy Basics</AppText>
-        <AppText color={colors.textMuted}>
-          Profile details are public by design. Current game status is manual in v1 and can be cleared any time from Edit Profile.
-        </AppText>
-      </Card>
-      <Button label="Edit profile" variant="secondary" onPress={() => router.push('/edit-profile')} />
-      <Button label="Sign out" icon={LogOut} variant="danger" onPress={() => void handleSignOut()} />
+
+      <AppText variant="metadata" color={colors.textMuted} style={styles.version}>
+        PocketNet beta 0.1.0 · ThorLink companion mode · Standalone project, not affiliated with AYN or frontend projects.
+      </AppText>
     </Screen>
   );
 }
+
+function SettingsGroup({
+  icon: Icon,
+  title,
+  body,
+  meta,
+  action
+}: {
+  icon: LucideIcon;
+  title: string;
+  body: string;
+  meta?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <Card>
+      <Row>
+        <Icon color={colors.accentCyan} size={22} />
+        <Stack gap={2} style={styles.groupCopy}>
+          <AppText variant="sectionTitle">{title}</AppText>
+          <AppText color={colors.textSecondary}>{body}</AppText>
+          {meta ? <AppText variant="metadata" color={colors.textMuted}>{meta}</AppText> : null}
+        </Stack>
+      </Row>
+      {action}
+    </Card>
+  );
+}
+
+const styles = StyleSheet.create({
+  groupCopy: {
+    flex: 1
+  },
+  version: {
+    textAlign: 'center'
+  }
+});

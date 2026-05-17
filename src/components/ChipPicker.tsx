@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, radius, spacing } from '@/lib/theme';
+import { PressableScale } from '@/components/ui';
+import { colors, radius, spacing } from '@/design/tokens';
 
 export function ChipPicker({
   options,
@@ -20,10 +21,9 @@ export function ChipPicker({
       {options.map((option) => {
         const active = values.includes(option);
         return (
-          <Pressable
+          <PressableScale
             key={option}
-            accessibilityRole={multi ? 'checkbox' : 'radio'}
-            accessibilityState={{ checked: active }}
+            accessibilityRole="button"
             onPress={() => {
               if (multi) {
                 onChange(active ? values.filter((item) => item !== option) : [...values, option]);
@@ -31,14 +31,10 @@ export function ChipPicker({
                 onChange(option);
               }
             }}
-            style={({ pressed }) => [
-              styles.chip,
-              active && styles.activeChip,
-              pressed && styles.pressed
-            ]}
+            style={[styles.chip, active && styles.activeChip]}
           >
             <Text style={[styles.label, active && styles.activeLabel]}>{option}</Text>
-          </Pressable>
+          </PressableScale>
         );
       })}
     </View>
@@ -52,28 +48,26 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   chip: {
-    minHeight: 34,
+    minHeight: 38,
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.surfaceStrong,
     paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center'
   },
   activeChip: {
-    borderColor: colors.cyan,
-    backgroundColor: `${colors.cyan}18`
+    borderColor: `${colors.accentCyan}AA`,
+    backgroundColor: `${colors.accentCyan}18`
   },
   label: {
-    color: colors.textMuted,
+    color: colors.textSecondary,
     fontSize: 12,
-    fontWeight: '800'
+    lineHeight: 16,
+    fontWeight: '900'
   },
   activeLabel: {
-    color: colors.cyan
-  },
-  pressed: {
-    opacity: 0.72
+    color: colors.accentCyan
   }
 });
