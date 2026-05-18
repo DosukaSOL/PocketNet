@@ -44,6 +44,44 @@ PocketNet is designed for handhelds like AYN Thor, AYN Odin, Retroid devices, AY
 
 PocketNet is standalone and is not affiliated with AYN, Cocoon, Daijisho, ES-DE, Beacon, Supabase, Expo, or any other mentioned company/project.
 
+## Beta Status — What Works & What Doesn't
+
+PocketNet is in **public beta**. This is an honest snapshot for anyone downloading the APK.
+
+### Working
+
+- Account creation with email **or** username, plus password.
+- Persistent login sessions across app restarts.
+- Onboarding (device picker, frontend, systems, games, currently playing, setup notes).
+- Profile create + edit: display name, username, avatar, banner, bio, region, social links.
+- Handheld + frontend badges on profiles.
+- Home feed with auto-refresh on focus.
+- "Online now" carousel of recently active friends.
+- Text and image posts with a hardened upload pipeline (8 MB cap, MIME inference).
+- Likes, comments, delete own posts, report posts.
+- Discover tab: search users, browse communities.
+- Friend requests: send, accept, reject, friend list, block, report.
+- Communities: create, join, leave, post, pin, moderator controls, bans, reports.
+- In-app notifications screen with mark-all-read.
+- Theme system: PocketNet (default), Dark, Light — applies on next app launch.
+- Layout preferences: Standard, Split (input bottom), Split (input top), Compact.
+- Settings screen: theme, layout, sign out.
+- Row Level Security on all Supabase tables.
+- No service-role key or private secret in the client.
+
+### Known limitations / not working yet
+
+- **Email confirmation links don't open a real web page.** The Supabase **Site URL** is set to a custom deep-link scheme (`pocketnet://confirmed`) because PocketNet has no domain yet. On Android with PocketNet installed, the link opens the app; on desktop browsers it just shows "page can't be loaded" — but the account is still marked confirmed by Supabase the moment the link is clicked. **This will be fixed once PocketNet has a real domain** (a one-page landing site + redirect handler).
+- Built-in Supabase mailer is rate-limited (~2 emails/hour, ~30/day). Fine for a small beta; custom SMTP comes later.
+- Theme + layout changes take full effect **on the next app launch** (React Native `StyleSheet` snapshots values at module load).
+- Push notifications are not implemented. In-app notifications only.
+- No self-serve account deletion — needs a support flow.
+- No production moderation/admin console yet — reports are stored but not actioned through a UI.
+- Image compression beyond an 8 MB hard cap is not enforced.
+- AYN Thor dual-screen is OS-managed. PocketNet only reorders content **inside** the surface Android assigns it; users move the app between screens via Android, not via PocketNet.
+- No real-time subscriptions — feeds refresh on focus, not via websockets.
+- No voice, video, calling, or DMs in v1.
+
 ## Device-Adaptive Design
 
 PocketNet asks users which Android handheld they use during onboarding, then tunes the app around that device profile.
