@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
-import { Compass, Home, PlusCircle, RadioTower, UserRound } from 'lucide-react-native';
+import { Compass, Home, PlusCircle, UserRound } from 'lucide-react-native';
 
-import { colors } from '@/design/tokens';
+import { colors, radius, shadows, spacing } from '@/design/tokens';
 
 export default function TabsLayout() {
   return (
@@ -10,12 +10,17 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarStyle: {
           position: 'absolute',
-          backgroundColor: 'rgba(16, 23, 38, 0.96)',
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          minHeight: 76,
-          paddingTop: 9,
-          paddingBottom: 10
+          left: spacing.md,
+          right: spacing.md,
+          bottom: spacing.md,
+          height: 74,
+          borderRadius: radius.xxl,
+          backgroundColor: 'rgba(13, 21, 36, 0.92)',
+          borderColor: colors.borderGlow,
+          borderWidth: 1,
+          paddingTop: 8,
+          paddingBottom: 8,
+          ...shadows.card
         },
         tabBarActiveTintColor: colors.accentCyan,
         tabBarInactiveTintColor: colors.textMuted,
@@ -25,15 +30,14 @@ export default function TabsLayout() {
           fontWeight: '900'
         },
         tabBarItemStyle: {
-          borderRadius: 18,
-          marginHorizontal: 2
+          borderRadius: radius.xl,
+          marginHorizontal: 4
         }
       }}
     >
       <Tabs.Screen name="home" options={{ title: 'Home', tabBarIcon: icon(Home) }} />
       <Tabs.Screen name="discover" options={{ title: 'Discover', tabBarIcon: icon(Compass) }} />
       <Tabs.Screen name="create" options={{ title: 'Post', tabBarIcon: icon(PlusCircle) }} />
-      <Tabs.Screen name="thorlink" options={{ title: 'ThorLink', tabBarIcon: icon(RadioTower) }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: icon(UserRound) }} />
     </Tabs>
   );

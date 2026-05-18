@@ -68,13 +68,13 @@ Run this checklist before tagging a public beta.
 - [ ] Normal member cannot moderate others.
 - [ ] Report community.
 
-## ThorLink
+## Device Adaptation
 
-- [ ] ThorLink dashboard renders logo and compact panels.
-- [ ] Quick status updates profile.
-- [ ] Quick screenshot entry creates an image post.
-- [ ] Friend activity panel shows active friends.
-- [ ] Glance feed stays readable on narrow width.
+- [ ] Onboarding asks for handheld device with a dropdown list.
+- [ ] AYN Thor and AYANEO Pocket DS select the dual-screen profile.
+- [ ] AYN Odin, Retroid, AYANEO Pocket, ANBERNIC, and Logitech devices select appropriate single-screen profiles.
+- [ ] Home renders the selected device optimization card.
+- [ ] Compact and dual-screen profiles keep feed cards readable on narrow width.
 
 ## APK
 

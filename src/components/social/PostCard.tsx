@@ -1,12 +1,15 @@
 import { Image } from 'expo-image';
-import { Flag, Gamepad2, Heart, MessageCircle, MonitorSmartphone, MoreHorizontal, Pin, Send, Trash2 } from 'lucide-react-native';
+import { Flag, Heart, MessageCircle, MoreHorizontal, Pin, Send, Trash2 } from 'lucide-react-native';
 import { useMemo, useRef, useState } from 'react';
 import { Alert, Animated, StyleSheet, View } from 'react-native';
 
-import { AppText, Avatar, Badge, Button, Card, IconButton, Row, Stack, TextField } from '@/components/ui';
-import { colors, radius, spacing } from '@/design/tokens';
+import { AppText, Avatar, Badge, Button, GlowCard, IconButton, Reveal, Row, Stack, TextField } from '@/components/ui';
+import { DeviceBadge, FrontendBadge } from '@/components/device';
+import { CommentCard } from '@/components/social/CommentCard';
+import { colors, radius, shadows, spacing } from '@/design/tokens';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
+import { isDualScreenDevice } from '@/lib/devices';
 import { canDeleteCommunityPost } from '@/lib/moderation';
 import type { Post } from '@/types/domain';
 
@@ -17,6 +20,7 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
   const likeScale = useRef(new Animated.Value(1)).current;
   const author = getProfile(post.authorId);
   const community = getCommunity(post.communityId);
+  const dualScreenAuthor = isDualScreenDevice(author?.favoriteHandheld);
   const hasLiked = profile ? post.likeIds.includes(profile.id) : false;
   const canDelete = canDeleteCommunityPost({
     community,
@@ -67,14 +71,15 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
   }
 
   return (
-    <Card elevated={!compact} style={compact ? styles.compactCard : undefined}>
+    <Reveal>
+      <GlowCard tone={hasLiked ? 'pink' : dualScreenAuthor ? 'focus' : 'cyan'} style={[styles.card, compact && styles.compactCard]}>
       <Row style={styles.header}>
         <Avatar
           label={author?.displayName ?? 'PocketNet user'}
           uri={author?.avatarUrl}
           size={compact ? 42 : 50}
           status={author?.currentGame ? 'online' : 'offline'}
-          thor={author?.isThorUser}
+          focus={dualScreenAuthor}
         />
         <Stack gap={2} style={styles.authorBlock}>
           <Row style={styles.authorLine}>
@@ -92,12 +97,8 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
 
       <Row style={styles.badges}>
         {community ? <Badge label={community.name} tone="blue" compact /> : null}
-        {author?.favoriteHandheld ? (
-          <Badge label={author.favoriteHandheld} tone={author.isThorUser ? 'thor' : 'cyan'} icon={Gamepad2} compact />
-        ) : null}
-        {author?.favoriteFrontend ? (
-          <Badge label={author.favoriteFrontend} tone="purple" icon={MonitorSmartphone} compact />
-        ) : null}
+        {author?.favoriteHandheld ? <DeviceBadge deviceName={author.favoriteHandheld} compact /> : null}
+        <FrontendBadge frontend={author?.favoriteFrontend} compact />
       </Row>
 
       {post.body ? <AppText style={styles.bodyText}>{post.body}</AppText> : null}
@@ -138,12 +139,7 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
           {post.comments.slice(-2).map((item) => {
             const commentAuthor = getProfile(item.authorId);
             return (
-              <View key={item.id} style={styles.comment}>
-                <AppText variant="metadata" color={colors.textMuted}>
-                  {commentAuthor?.displayName ?? 'Player'}
-                </AppText>
-                <AppText variant="caption">{item.body}</AppText>
-              </View>
+              <CommentCard key={item.id} comment={item} authorName={commentAuthor?.displayName ?? 'Player'} />
             );
           })}
           <Row style={styles.commentComposer}>
@@ -160,11 +156,15 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
           </Row>
         </Stack>
       ) : null}
-    </Card>
+      </GlowCard>
+    </Reveal>
   );
 }
 
 const styles = StyleSheet.create({
+  card: {
+    ...shadows.card
+  },
   compactCard: {
     padding: spacing.sm,
     borderRadius: radius.lg
@@ -199,14 +199,6 @@ const styles = StyleSheet.create({
   },
   actionSpacer: {
     flex: 1
-  },
-  comment: {
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    padding: spacing.sm,
-    gap: 2
   },
   commentComposer: {
     alignItems: 'flex-start'

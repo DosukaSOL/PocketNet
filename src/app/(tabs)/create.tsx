@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import { StatusComposer } from '@/components/social/StatusComposer';
-import { AppText, Badge, Button, Card, PressableScale, Row, Screen, Stack } from '@/components/ui';
+import { AppText, Badge, Button, GlowCard, PressableScale, Row, Screen, Stack } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
 import { pickImage } from '@/lib/media';
@@ -58,7 +58,7 @@ export default function CreateScreen() {
         </AppText>
       </Stack>
 
-      <Card>
+      <GlowCard tone="purple">
         <Row style={styles.sectionHeader}>
           <Stack gap={2}>
             <AppText variant="sectionTitle">Destination</AppText>
@@ -91,7 +91,7 @@ export default function CreateScreen() {
             <Button label="Discover" compact variant="secondary" onPress={() => router.push('/(tabs)/discover')} />
           </View>
         ) : null}
-      </Card>
+      </GlowCard>
 
       <StatusComposer
         profile={profile}
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfaceStrong,
+    backgroundColor: colors.control,
     paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center'
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceGlass,
     padding: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',

@@ -5,9 +5,11 @@ import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
 import { ChipPicker } from '@/components/ChipPicker';
+import { DeviceProfileCard, DeviceSelect } from '@/components/social/DeviceProfileCard';
 import { AppText, Badge, Button, Card, Row, Screen, Stack, TextArea, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { FRONTENDS, HANDHELDS, REGIONS, SAMPLE_GAMES, SYSTEMS } from '@/lib/catalog';
+import { FRONTENDS, REGIONS, SAMPLE_GAMES, SYSTEMS } from '@/lib/catalog';
+import { isDualScreenDevice } from '@/lib/devices';
 import { pickImage, uploadImage } from '@/lib/media';
 import { colors, radius, spacing } from '@/design/tokens';
 
@@ -88,7 +90,7 @@ export default function EditProfileScreen() {
           github,
           website
         },
-        isThorUser: favoriteHandheld === 'AYN Thor',
+        isThorUser: isDualScreenDevice(favoriteHandheld),
         avatarUri: avatarUrl,
         bannerUri: bannerUrl
       });
@@ -157,7 +159,8 @@ export default function EditProfileScreen() {
       </Card>
       <Card>
         <AppText variant="sectionTitle">Handheld</AppText>
-        <ChipPicker options={HANDHELDS} value={favoriteHandheld} onChange={(value) => setFavoriteHandheld(String(value))} />
+        <DeviceSelect value={favoriteHandheld} onChange={setFavoriteHandheld} />
+        <DeviceProfileCard deviceName={favoriteHandheld} />
       </Card>
       <Card>
         <AppText variant="sectionTitle">Frontend</AppText>

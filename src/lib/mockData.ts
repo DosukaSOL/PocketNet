@@ -26,9 +26,9 @@ export const seedProfiles: Profile[] = [
     favoriteFrontend: 'Cocoon',
     favoriteSystems: ['Nintendo DS', 'PlayStation 2', 'Android'],
     favoriteGames: ['Chrono Trigger', 'Balatro', 'Ridge Racer Type 4'],
-    setupNotes: 'Dual-screen profile, compact widgets, docked capture workflow.',
+    setupNotes: 'Dual-screen profile, compact quick actions, docked capture workflow.',
     currentGame: 'Chrono Trigger',
-    currentStatus: 'Testing a clean second-screen dashboard.',
+    currentStatus: 'Testing a clean split-screen dashboard.',
     isThorUser: true,
     createdAt: now,
     updatedAt: now
@@ -72,10 +72,10 @@ export const seedProfiles: Profile[] = [
 
 export const seedCommunities: Community[] = [
   {
-    id: 'thor-lab',
-    slug: 'thor-lab',
-    name: 'Thor Lab',
-    description: 'Dual-screen setups, ThorLink dashboards, and clamshell-first play styles.',
+    id: 'dual-screen-lab',
+    slug: 'dual-screen-lab',
+    name: 'Dual-Screen Lab',
+    description: 'Dual-screen setups, split-display workflows, and clamshell-first play styles.',
     creatorId: previewUserId,
     memberIds: [previewUserId, 'ren'],
     roles: { [previewUserId]: 'creator', ren: 'member' },
@@ -115,8 +115,8 @@ export const seedPosts: Post[] = [
   {
     id: 'post-2',
     authorId: previewUserId,
-    communityId: 'thor-lab',
-    body: 'ThorLink compact mode is becoming my between-games dashboard: friends, status, screenshot entry, done.',
+    communityId: 'dual-screen-lab',
+    body: 'The compact device dashboard is becoming my between-games flow: friends, status, screenshot entry, done.',
     imageUrls: [],
     likeIds: ['ren'],
     comments: [],

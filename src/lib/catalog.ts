@@ -1,15 +1,4 @@
-export const HANDHELDS = [
-  'AYN Thor',
-  'AYN Odin 2',
-  'AYN Odin 3',
-  'Retroid Pocket 5',
-  'Retroid Pocket Flip 2',
-  'AYANEO Pocket DS',
-  'AYANEO Pocket Air',
-  'ANBERNIC RG556',
-  'Logitech G Cloud',
-  'Other Android handheld'
-];
+export { HANDHELDS } from '@/lib/devices';
 
 export const FRONTENDS = [
   'Cocoon',

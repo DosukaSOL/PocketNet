@@ -1,9 +1,10 @@
-import { Image } from 'expo-image';
-import { ImagePlus, Send, X } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import { ImagePlus, Send } from 'lucide-react-native';
+import { StyleSheet } from 'react-native';
 
-import { AppText, Avatar, Button, Card, IconButton, Row, Stack, TextArea } from '@/components/ui';
-import { colors, radius, spacing } from '@/design/tokens';
+import { ImagePreview } from '@/components/ui/ImagePreview';
+import { AppText, Avatar, Button, GlowCard, Row, Stack, TextArea } from '@/components/ui';
+import { colors } from '@/design/tokens';
+import { isDualScreenDevice } from '@/lib/devices';
 import type { Profile } from '@/types/domain';
 
 export function StatusComposer({
@@ -30,11 +31,12 @@ export function StatusComposer({
   title?: string;
 }) {
   const disabled = loading || (!value.trim() && !imageUri);
+  const dualScreen = isDualScreenDevice(profile?.favoriteHandheld);
   return (
-    <Card elevated>
+    <GlowCard tone={dualScreen ? 'focus' : 'cyan'}>
       <Row style={styles.header}>
         {profile ? (
-          <Avatar label={profile.displayName} uri={profile.avatarUrl} status={profile.currentGame ? 'online' : 'offline'} thor={profile.isThorUser} />
+          <Avatar label={profile.displayName} uri={profile.avatarUrl} status={profile.currentGame ? 'online' : 'offline'} focus={dualScreen} />
         ) : null}
         <Stack gap={2} style={styles.headerCopy}>
           <AppText variant="sectionTitle">{title}</AppText>
@@ -44,14 +46,7 @@ export function StatusComposer({
         </Stack>
       </Row>
       <TextArea value={value} onChangeText={onChangeText} placeholder={placeholder} />
-      {imageUri ? (
-        <View style={styles.previewWrap}>
-          <Image source={{ uri: imageUri }} style={styles.preview} contentFit="cover" />
-          <View style={styles.removeButton}>
-            <IconButton icon={X} label="Remove image" danger onPress={onRemoveImage} />
-          </View>
-        </View>
-      ) : null}
+      {imageUri ? <ImagePreview uri={imageUri} onRemove={onRemoveImage} /> : null}
       <Row>
         <Button label="Image" icon={ImagePlus} variant="secondary" onPress={onChooseImage} />
         <Button label="Post" icon={Send} loading={loading} disabled={disabled} onPress={onSubmit} />
@@ -59,7 +54,7 @@ export function StatusComposer({
       <AppText variant="metadata" color={colors.textMuted}>
         {Math.max(0, 2000 - value.length)} characters left
       </AppText>
-    </Card>
+    </GlowCard>
   );
 }
 
@@ -69,21 +64,5 @@ const styles = StyleSheet.create({
   },
   headerCopy: {
     flex: 1
-  },
-  previewWrap: {
-    position: 'relative'
-  },
-  preview: {
-    width: '100%',
-    aspectRatio: 16 / 10,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceStrong
-  },
-  removeButton: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm
   }
 });

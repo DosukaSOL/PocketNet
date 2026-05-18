@@ -5,7 +5,7 @@ import { Alert, StyleSheet } from 'react-native';
 
 import { CommunityCard } from '@/components/CommunityCard';
 import { UserCard } from '@/components/social/UserCard';
-import { AppText, Badge, Button, Card, EmptyState, Row, Screen, SearchBar, Stack, TextArea, TextField } from '@/components/ui';
+import { AppText, Badge, Button, EmptyState, GlowCard, Row, Screen, SearchBar, Stack, TextArea, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
 import { colors, spacing } from '@/design/tokens';
@@ -94,7 +94,7 @@ export default function DiscoverScreen() {
         />
       )}
 
-      <Card gradient="pocket" elevated>
+      <GlowCard tone="purple">
         <Row style={styles.sectionHeader}>
           <Stack gap={2} style={styles.formCopy}>
             <AppText variant="sectionTitle">Start a Community</AppText>
@@ -104,7 +104,7 @@ export default function DiscoverScreen() {
           </Stack>
           <Badge label="Creator tools" tone="purple" />
         </Row>
-        <TextField label="Name" value={communityName} onChangeText={setCommunityName} placeholder="Thor Lab" />
+        <TextField label="Name" value={communityName} onChangeText={setCommunityName} placeholder="Dual-Screen Lab" />
         <TextArea
           label="Description"
           value={communityDescription}
@@ -112,7 +112,7 @@ export default function DiscoverScreen() {
           placeholder="What belongs here?"
         />
         <Button label="Create community" icon={Plus} loading={creating} onPress={() => void handleCreateCommunity()} />
-      </Card>
+      </GlowCard>
 
       <Row style={styles.sectionHeader}>
         <Stack gap={2}>

@@ -4,7 +4,7 @@ import { ArrowLeft, Bell, Eye, LogOut, Palette, ShieldCheck, UserRound } from 'l
 import type { ReactNode } from 'react';
 import { Alert, StyleSheet } from 'react-native';
 
-import { AppText, Badge, Button, Card, Row, Screen, Stack } from '@/components/ui';
+import { AppText, Badge, Button, GlowCard, Row, Screen, Stack } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { colors, spacing } from '@/design/tokens';
 
@@ -65,16 +65,16 @@ export default function SettingsScreen() {
         meta="Theme: PocketNet OLED"
       />
 
-      <Card gradient="danger">
+      <GlowCard tone="pink">
         <AppText variant="sectionTitle">Session</AppText>
         <AppText color={colors.textSecondary}>
           Sign out of this device. Preview data remains local to the app session.
         </AppText>
         <Button label="Sign out" icon={LogOut} variant="danger" onPress={() => void handleSignOut()} />
-      </Card>
+      </GlowCard>
 
       <AppText variant="metadata" color={colors.textMuted} style={styles.version}>
-        PocketNet beta 0.1.0 · ThorLink companion mode · Standalone project, not affiliated with AYN or frontend projects.
+        PocketNet beta 0.1.0 · Device-adaptive Android handheld social app · Standalone project, not affiliated with AYN or frontend projects.
       </AppText>
     </Screen>
   );
@@ -94,7 +94,7 @@ function SettingsGroup({
   action?: ReactNode;
 }) {
   return (
-    <Card>
+    <GlowCard tone="cyan">
       <Row>
         <Icon color={colors.accentCyan} size={22} />
         <Stack gap={2} style={styles.groupCopy}>
@@ -104,7 +104,7 @@ function SettingsGroup({
         </Stack>
       </Row>
       {action}
-    </Card>
+    </GlowCard>
   );
 }
 

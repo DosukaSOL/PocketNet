@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft, Flag, Pin, Shield, UserMinus, UserPlus, Users } from 'lucide-react-native';
 import { useState } from 'react';
@@ -7,11 +8,11 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { PostCard } from '@/components/PostCard';
 import { StatusComposer } from '@/components/social/StatusComposer';
 import { UserCard } from '@/components/social/UserCard';
-import { AppText, Avatar, Badge, Button, Card, EmptyState, Row, Screen, Stack, StatPill } from '@/components/ui';
+import { AppText, Avatar, Badge, Button, EmptyState, GlowCard, Row, Screen, Stack, StatPill } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
 import { canManageCommunityRoles, canModerateCommunity } from '@/lib/moderation';
-import { colors, gradients, spacing } from '@/design/tokens';
+import { colors, gradients, radius, spacing } from '@/design/tokens';
 
 export default function CommunityScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -73,12 +74,12 @@ export default function CommunityScreen() {
     <Screen scroll>
       <Button label="Back" icon={ArrowLeft} compact variant="ghost" onPress={() => router.back()} />
 
-      <Card elevated style={styles.hero}>
+      <GlowCard tone="purple" style={styles.hero}>
         <View style={styles.banner}>
           {activeCommunity.bannerUrl ? (
             <Image source={{ uri: activeCommunity.bannerUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
           ) : (
-            <View style={styles.bannerFallback} />
+            <LinearGradient colors={gradients.magenta} style={StyleSheet.absoluteFill} />
           )}
           <View style={styles.bannerShade} />
         </View>
@@ -89,7 +90,7 @@ export default function CommunityScreen() {
               <AppText variant="display">{activeCommunity.name}</AppText>
               <AppText color={colors.textSecondary}>{activeCommunity.description}</AppText>
             </Stack>
-            <Avatar label={activeCommunity.name} size={64} thor />
+            <Avatar label={activeCommunity.name} size={64} focus />
           </Row>
           <Row style={styles.stats}>
             <StatPill label="Members" value={activeCommunity.memberIds.length} />
@@ -110,7 +111,7 @@ export default function CommunityScreen() {
             <Button label="Report" icon={Flag} variant="ghost" onPress={() => void reportCommunity()} />
           </Row>
         </Stack>
-      </Card>
+      </GlowCard>
 
       {pinnedPost ? (
         <Stack gap={spacing.sm}>
@@ -203,18 +204,18 @@ export default function CommunityScreen() {
 
 const styles = StyleSheet.create({
   hero: {
-    paddingTop: 0
+    paddingTop: 0,
+    overflow: 'hidden'
   },
   banner: {
-    height: 156,
-    marginHorizontal: -spacing.md,
-    marginTop: -spacing.md,
+    height: 172,
+    marginHorizontal: -spacing.lg,
+    marginTop: -spacing.lg,
     marginBottom: spacing.md,
-    backgroundColor: colors.surfaceStrong
-  },
-  bannerFallback: {
-    flex: 1,
-    backgroundColor: gradients.hero[0]
+    backgroundColor: colors.surfaceStrong,
+    borderBottomLeftRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
+    overflow: 'hidden'
   },
   bannerShade: {
     ...StyleSheet.absoluteFillObject,

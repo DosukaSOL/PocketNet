@@ -1,10 +1,15 @@
 import { Image } from 'expo-image';
-import { Gamepad2, Link as LinkIcon, MonitorSmartphone, RadioTower, ShieldCheck } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { RadioTower, ShieldCheck } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Avatar, Badge, Button, Card, Row, SegmentedTabs, Stack, StatPill } from '@/components/ui';
+import { AppText, Avatar, Badge, Button, GlowCard, Row, SegmentedTabs, Stack } from '@/components/ui';
+import { DeviceBadge, FrontendBadge } from '@/components/device';
 import { SetupCard } from '@/components/social/SetupCard';
-import { colors, gradients, shadows, spacing } from '@/design/tokens';
+import { ProfileSocialLinks } from '@/components/social/ProfileSocialLinks';
+import { ProfileStats } from '@/components/social/ProfileStats';
+import { colors, gradients, radius, shadows, spacing } from '@/design/tokens';
+import { getDeviceProfile, isDualScreenDevice } from '@/lib/devices';
 import type { Profile } from '@/types/domain';
 
 export type ProfileTab = 'posts' | 'setup' | 'communities';
@@ -42,6 +47,8 @@ export function ProfileHeader({
   onBlock?: () => void;
   onReport?: () => void;
 }) {
+  const dualScreen = isDualScreenDevice(profile.favoriteHandheld);
+  const device = getDeviceProfile(profile.favoriteHandheld);
   const actionLabel = hasIncomingRequest
     ? 'Accept'
     : isFriend
@@ -52,14 +59,17 @@ export function ProfileHeader({
 
   return (
     <Stack gap={spacing.md}>
-      <Card style={styles.wrap} elevated>
+      <GlowCard tone={dualScreen ? 'focus' : 'cyan'} style={styles.wrap}>
         <View style={styles.banner}>
           {profile.bannerUrl ? (
             <Image source={{ uri: profile.bannerUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
           ) : (
-            <View style={styles.bannerFallback} />
+            <LinearGradient colors={dualScreen ? gradients.focus : gradients.hero} style={StyleSheet.absoluteFill} />
           )}
           <View style={styles.bannerOverlay} />
+          <View style={[styles.devicePlate, { borderColor: `${device.accentColor}66` }]}>
+            <AppText variant="metadata" color={colors.textSecondary}>{device.badgeLabel}</AppText>
+          </View>
         </View>
 
         <View style={styles.identity}>
@@ -69,7 +79,7 @@ export function ProfileHeader({
               uri={profile.avatarUrl}
               size={88}
               status={profile.currentGame ? 'online' : 'offline'}
-              thor={profile.isThorUser}
+              focus={dualScreen}
             />
           </View>
           <Stack gap={spacing.xs} style={styles.nameBlock}>
@@ -77,7 +87,7 @@ export function ProfileHeader({
               <AppText variant="heroTitle" numberOfLines={1} style={styles.name}>
                 {profile.displayName}
               </AppText>
-              {profile.isThorUser ? <ShieldCheck color={colors.thorlinkAccent} size={18} /> : null}
+              {dualScreen ? <ShieldCheck color={colors.focus} size={18} /> : null}
             </Row>
             <AppText variant="caption" color={colors.textMuted}>
               @{profile.username}
@@ -88,33 +98,16 @@ export function ProfileHeader({
         {profile.bio ? <AppText color={colors.textSecondary}>{profile.bio}</AppText> : null}
 
         <Row style={styles.badges}>
-          {profile.favoriteHandheld ? (
-            <Badge label={profile.favoriteHandheld} tone={profile.isThorUser ? 'thor' : 'cyan'} icon={Gamepad2} />
-          ) : null}
-          {profile.favoriteFrontend ? (
-            <Badge label={profile.favoriteFrontend} tone="purple" icon={MonitorSmartphone} />
-          ) : null}
+          {profile.favoriteHandheld ? <DeviceBadge deviceName={profile.favoriteHandheld} /> : null}
+          <FrontendBadge frontend={profile.favoriteFrontend} />
           {profile.currentGame ? (
             <Badge label={`Playing ${profile.currentGame}`} tone="pink" icon={RadioTower} />
           ) : null}
         </Row>
 
-        {Object.entries(profile.socialLinks).some(([, value]) => Boolean(value)) ? (
-          <Row style={styles.badges}>
-            {Object.entries(profile.socialLinks)
-              .filter(([, value]) => Boolean(value))
-              .slice(0, 5)
-              .map(([name]) => (
-                <Badge key={name} label={name} tone="neutral" icon={LinkIcon} compact />
-              ))}
-          </Row>
-        ) : null}
+        <ProfileSocialLinks profile={profile} />
 
-        <Row>
-          <StatPill label="Posts" value={postCount} />
-          <StatPill label="Friends" value={friendCount} />
-          <StatPill label="Places" value={communityCount} />
-        </Row>
+        <ProfileStats posts={postCount} friends={friendCount} communities={communityCount} />
 
         <Row style={styles.actions}>
           {isCurrentUser ? (
@@ -133,7 +126,7 @@ export function ProfileHeader({
             </>
           ) : null}
         </Row>
-      </Card>
+      </GlowCard>
 
       <SetupCard profile={profile} compact />
 
@@ -159,19 +152,25 @@ const styles = StyleSheet.create({
     ...shadows.card
   },
   banner: {
-    height: 154,
-    marginHorizontal: -spacing.md,
-    marginTop: -spacing.md,
+    height: 184,
+    marginHorizontal: -spacing.lg,
+    marginTop: -spacing.lg,
     marginBottom: -spacing.xl,
     backgroundColor: colors.surfaceStrong
   },
-  bannerFallback: {
-    flex: 1,
-    backgroundColor: gradients.hero[0]
-  },
   bannerOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(5, 7, 13, 0.30)'
+    backgroundColor: 'rgba(4, 6, 13, 0.24)'
+  },
+  devicePlate: {
+    position: 'absolute',
+    right: spacing.md,
+    bottom: spacing.md,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    backgroundColor: colors.overlay,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs
   },
   identity: {
     flexDirection: 'row',

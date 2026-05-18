@@ -14,15 +14,15 @@ Android handheld users are not just "phone users with controllers." They spend t
 - Design for dark OLED-first use with crisp contrast and low-glare surfaces.
 - Support both touch and controller-style navigation patterns through clear focus states, large tap targets, and predictable tab structure.
 
-## AYN Thor and ThorLink
+## AYN Thor and Device-Adaptive Layout
 
 AYN lists Thor as an Android 13 handheld with a Snapdragon 8 Gen 2 CPU, a 6-inch AMOLED touch screen, and a 6000 mAh battery on its official site ([AYN](https://www.ayntec.com/)). Retail listing imagery for Thor Max describes a clamshell dual-OLED device: a 6-inch 1080x1920 120 Hz top display and a 3.92-inch 1080x1240 60 Hz bottom display, plus AYN multitasking and Thor Control Center concepts ([Best Buy](https://www.bestbuy.com/product/thor-max-6-dualamoled-android-gaming-handheld-snapdragon-8-gen-2-16gb-ram-1tb-storage/J3R85PHQWG)).
 
-Implications for ThorLink:
+Implications for PocketNet:
 
 - Do not fake system-level dual-screen APIs. Expo/React Native cannot directly control AYN's display strategy without native/device-specific integration.
-- Make ThorLink a first-class app section that is useful today: compact dashboard, quick status, quick screenshot post, friend activity, Thor setup card, and a second-screen-friendly visual mode.
-- Keep the layout compact and glanceable so it can sit well on a smaller secondary display or Android split-screen.
+- Ask for the user's handheld during onboarding, then tune badges, density, setup cards, and dashboard copy from that device profile.
+- Keep dual-screen device layouts compact and glanceable so they can work on smaller or split-display contexts without claiming native control.
 - Document future native integration hooks: device detection, Android window metrics, intent shortcuts, launcher/deep-link handoff, and optional native module research.
 
 ## Frontends and Launcher Culture
@@ -88,5 +88,5 @@ The beta should ship as:
 - A polished OLED-first Expo Android app.
 - Supabase-backed auth, profile, feed, friends, communities, notifications, reports, and storage-ready media paths.
 - A local preview mode for UI/QA when Supabase env values are not configured.
-- ThorLink as a real app section with a compact AYN Thor-oriented dashboard and documented future native integration path.
+- Device-adaptive onboarding and profile identity with documented future native integration paths.
 - APK release documentation and secret scanning before every commit/release.

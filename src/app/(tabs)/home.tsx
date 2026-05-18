@@ -1,16 +1,17 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Bell, Compass, RefreshCw, Sparkles, UserX } from 'lucide-react-native';
+import { Bell, Compass, RefreshCw, UserX } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { PostCard } from '@/components/PostCard';
+import { DeviceProfileCard } from '@/components/social/DeviceProfileCard';
 import { NotificationCard } from '@/components/social/NotificationCard';
 import { UserCard } from '@/components/social/UserCard';
-import { AppText, Badge, Button, Card, EmptyState, Row, Screen, Skeleton, Stack, StatPill } from '@/components/ui';
+import { AppText, Badge, Button, EmptyState, GlowCard, Row, Screen, Skeleton, Stack, StatPill } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
-import { colors, gradients, radius, spacing } from '@/design/tokens';
+import { colors, radius, spacing } from '@/design/tokens';
+import { getDeviceProfile } from '@/lib/devices';
 
 export default function HomeScreen() {
   const { profile } = useAuth();
@@ -30,6 +31,7 @@ export default function HomeScreen() {
   const requests = getIncomingRequests();
   const friends = getFriends();
   const unread = notifications.filter((notification) => !notification.readAt);
+  const device = getDeviceProfile(profile?.favoriteHandheld);
   const activeFriends = useMemo(
     () => friends.filter((friend) => friend.currentGame || friend.currentStatus).slice(0, 3),
     [friends]
@@ -37,14 +39,13 @@ export default function HomeScreen() {
 
   return (
     <Screen scroll refreshing={isLoading} onRefresh={() => void refresh()}>
-      <Card gradient="pocket" elevated style={styles.hero}>
-        <LinearGradient colors={gradients.aurora} style={styles.heroGlow} />
+      <GlowCard tone={device.category === 'dual-screen' ? 'focus' : 'cyan'} style={styles.commandBar}>
         <Row style={styles.heroTop}>
           <Stack gap={spacing.xs} style={styles.heroCopy}>
-            <Badge label="PocketNet beta" tone="cyan" icon={Sparkles} />
-            <AppText variant="display">Your handheld social layer</AppText>
+            <Badge label={device.badgeLabel} tone={device.category === 'dual-screen' ? 'focus' : 'cyan'} />
+            <AppText variant="screenTitle">PocketNet</AppText>
             <AppText color={colors.textSecondary}>
-              Setups, screenshots, friends, and communities built for Android gaming handhelds.
+              A social home tuned for {device.name}: {device.layoutHint.toLowerCase()}
             </AppText>
           </Stack>
           <Button label="Sync" icon={RefreshCw} compact variant="secondary" onPress={() => void refresh()} />
@@ -54,7 +55,9 @@ export default function HomeScreen() {
           <StatPill label="Friends" value={friends.length} />
           <StatPill label="Unread" value={unread.length} />
         </Row>
-      </Card>
+      </GlowCard>
+
+      <DeviceProfileCard deviceName={profile?.favoriteHandheld} />
 
       {unread.length ? (
         <Stack gap={spacing.sm}>
@@ -129,7 +132,7 @@ export default function HomeScreen() {
       {isLoading && !feed.length ? (
         <Stack>
           {[0, 1, 2].map((item) => (
-            <Card key={item}>
+            <GlowCard key={item}>
               <Row>
                 <Skeleton width={50} height={50} radius={25} />
                 <Stack gap={spacing.xs} style={styles.skeletonCopy}>
@@ -138,7 +141,7 @@ export default function HomeScreen() {
                 </Stack>
               </Row>
               <Skeleton height={88} radius={radius.lg} />
-            </Card>
+            </GlowCard>
           ))}
         </Stack>
       ) : feed.length ? (
@@ -161,13 +164,10 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    minHeight: 220,
-    position: 'relative'
-  },
-  heroGlow: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: radius.card
+  commandBar: {
+    minHeight: 148,
+    position: 'relative',
+    borderColor: colors.borderStrong
   },
   heroTop: {
     alignItems: 'flex-start'

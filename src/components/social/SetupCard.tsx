@@ -1,13 +1,16 @@
-import { Gamepad2, MonitorSmartphone, Sparkles } from 'lucide-react-native';
+import { Sparkles } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Badge, Card, Row, Stack } from '@/components/ui';
+import { AppText, Badge, GlowCard, Row, Stack } from '@/components/ui';
+import { DeviceBadge, FrontendBadge } from '@/components/device';
 import { colors, radius, spacing } from '@/design/tokens';
+import { isDualScreenDevice } from '@/lib/devices';
 import type { Profile } from '@/types/domain';
 
 export function SetupCard({ profile, compact = false }: { profile: Profile; compact?: boolean }) {
+  const dualScreen = isDualScreenDevice(profile.favoriteHandheld);
   return (
-    <Card gradient="pocket" style={compact ? styles.compact : undefined}>
+    <GlowCard tone={dualScreen ? 'focus' : 'purple'} style={compact ? styles.compact : undefined}>
       <Row style={styles.header}>
         <View style={styles.iconBox}>
           <Sparkles color={colors.accentCyan} size={20} />
@@ -21,12 +24,8 @@ export function SetupCard({ profile, compact = false }: { profile: Profile; comp
       </Row>
 
       <Row style={styles.badges}>
-        {profile.favoriteHandheld ? (
-          <Badge label={profile.favoriteHandheld} tone={profile.isThorUser ? 'thor' : 'cyan'} icon={Gamepad2} />
-        ) : null}
-        {profile.favoriteFrontend ? (
-          <Badge label={profile.favoriteFrontend} tone="purple" icon={MonitorSmartphone} />
-        ) : null}
+        {profile.favoriteHandheld ? <DeviceBadge deviceName={profile.favoriteHandheld} /> : null}
+        <FrontendBadge frontend={profile.favoriteFrontend} />
       </Row>
 
       {profile.setupNotes ? (
@@ -40,7 +39,7 @@ export function SetupCard({ profile, compact = false }: { profile: Profile; comp
           <Badge key={system} label={system} tone="neutral" compact />
         ))}
       </Row>
-    </Card>
+    </GlowCard>
   );
 }
 

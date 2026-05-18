@@ -3,7 +3,7 @@ import { AtSign, Mail, ShieldCheck, UserPlus } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
-import { AppText, Badge, Button, Card, ErrorBanner, Row, Screen, Stack, TextField } from '@/components/ui';
+import { AppText, Badge, Button, ErrorBanner, GlowCard, Row, Screen, Stack, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { colors, spacing } from '@/design/tokens';
 
@@ -42,15 +42,15 @@ export default function SignupScreen() {
 
       {error ? <ErrorBanner body={error} /> : null}
       {notice ? (
-        <Card gradient="pocket">
+        <GlowCard tone="focus">
           <Row>
             <ShieldCheck color={colors.success} size={20} />
             <AppText color={colors.textSecondary} style={styles.noticeCopy}>{notice}</AppText>
           </Row>
-        </Card>
+        </GlowCard>
       ) : null}
 
-      <Card elevated>
+      <GlowCard tone="cyan">
         <TextField
           label="Email"
           leftIcon={Mail}
@@ -87,7 +87,7 @@ export default function SignupScreen() {
             Add Supabase public env values before creating production accounts.
           </AppText>
         ) : null}
-      </Card>
+      </GlowCard>
       <Button label="Back to login" variant="ghost" onPress={() => router.back()} />
     </Screen>
   );

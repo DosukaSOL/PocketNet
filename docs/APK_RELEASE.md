@@ -53,7 +53,7 @@ Generated native folders are ignored by default to avoid accidental signing-file
 - Login/signup/reset tested against production Supabase.
 - Profile avatar/banner upload tested.
 - Post image upload tested.
-- Friends, communities, reports, blocks, and ThorLink tested.
+- Friends, communities, reports, blocks, and device-adaptive flows tested.
 - APK SHA-256 checksum generated and included in release notes.
 - No `.env`, keystore, or credentials are staged.
 

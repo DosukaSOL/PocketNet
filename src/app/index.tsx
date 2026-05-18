@@ -1,7 +1,9 @@
 import { Redirect } from 'expo-router';
+import { ActivityIndicator } from 'react-native';
 
 import { useAuth } from '@/features/auth/AuthProvider';
-import { AppText, Screen } from '@/components/ui';
+import { AppText, GlowCard, Screen, Stack } from '@/components/ui';
+import { colors } from '@/design/tokens';
 
 export default function Index() {
   const { profile, isLoading } = useAuth();
@@ -9,10 +11,22 @@ export default function Index() {
   if (isLoading) {
     return (
       <Screen>
-        <AppText>Loading PocketNet...</AppText>
+        <GlowCard tone="cyan">
+          <Stack>
+            <ActivityIndicator color={colors.accentCyan} />
+            <AppText variant="sectionTitle">Loading PocketNet</AppText>
+            <AppText color={colors.textSecondary}>
+              Syncing your handheld profile and social feed.
+            </AppText>
+          </Stack>
+        </GlowCard>
       </Screen>
     );
   }
 
-  return <Redirect href={profile ? '/(tabs)/home' : '/(auth)/login'} />;
+  if (!profile) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
+  return <Redirect href={profile.favoriteHandheld ? '/(tabs)/home' : '/(auth)/onboarding'} />;
 }

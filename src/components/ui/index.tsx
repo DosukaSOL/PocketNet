@@ -35,7 +35,7 @@ type Tone =
   | 'neutral'
   | 'warning'
   | 'danger'
-  | 'thor';
+  | 'focus';
 
 const toneMap: Record<Tone, string> = {
   cyan: colors.accentCyan,
@@ -47,7 +47,7 @@ const toneMap: Record<Tone, string> = {
   neutral: colors.textSecondary,
   warning: colors.warning,
   danger: colors.danger,
-  thor: colors.thorlinkAccent
+  focus: colors.focus
 };
 
 function textVariant(variant: TextVariant) {
@@ -75,6 +75,7 @@ export function Screen({
   if (scroll) {
     return (
       <LinearGradient colors={gradients.app} style={styles.safeArea}>
+        <LinearGradient colors={gradients.appGlow} style={styles.backgroundGlow} />
         <SafeAreaView style={styles.safeArea}>
           <ScrollView
             contentContainerStyle={[styles.scrollScreen, padded && styles.padded, contentStyle]}
@@ -101,6 +102,7 @@ export function Screen({
 
   return (
     <LinearGradient colors={gradients.app} style={styles.safeArea}>
+      <LinearGradient colors={gradients.appGlow} style={styles.backgroundGlow} />
       <SafeAreaView style={styles.safeArea}>
         <View style={[styles.screen, padded && styles.padded, contentStyle]}>{children}</View>
       </SafeAreaView>
@@ -194,6 +196,44 @@ export function PressableScale({
   );
 }
 
+export function Reveal({
+  children,
+  delay = 0,
+  style
+}: PropsWithChildren<{ delay?: number; style?: StyleProp<ViewStyle> }>) {
+  const progress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: motion.entrance,
+      delay,
+      useNativeDriver: true
+    }).start();
+  }, [delay, progress]);
+
+  return (
+    <Animated.View
+      style={[
+        style,
+        {
+          opacity: progress,
+          transform: [
+            {
+              translateY: progress.interpolate({
+                inputRange: [0, 1],
+                outputRange: [12, 0]
+              })
+            }
+          ]
+        }
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
 export function Card({
   children,
   style,
@@ -204,15 +244,15 @@ export function Card({
 }: PropsWithChildren<{
   style?: StyleProp<ViewStyle>;
   elevated?: boolean;
-  gradient?: boolean | 'thor' | 'pocket' | 'danger';
+  gradient?: boolean | 'focus' | 'pocket' | 'danger';
   pressable?: boolean;
   onPress?: () => void;
 }>) {
   const cardBody = gradient ? (
     <LinearGradient
       colors={
-        gradient === 'thor'
-          ? gradients.thor
+        gradient === 'focus'
+          ? gradients.focus
           : gradient === 'danger'
             ? gradients.danger
             : gradient === 'pocket'
@@ -238,6 +278,27 @@ export function Card({
   );
 }
 
+export function GlassCard(props: PropsWithChildren<{ style?: StyleProp<ViewStyle>; elevated?: boolean }>) {
+  return <Card {...props} gradient style={[styles.glassCard, props.style]} elevated={props.elevated} />;
+}
+
+export function GlowCard(props: PropsWithChildren<{ style?: StyleProp<ViewStyle>; tone?: 'cyan' | 'purple' | 'pink' | 'focus' }>) {
+  const tone = props.tone ?? 'cyan';
+  const color =
+    tone === 'purple'
+      ? colors.accentPurple
+      : tone === 'pink'
+        ? colors.accentPink
+        : tone === 'focus'
+          ? colors.focus
+          : colors.accentCyan;
+  return (
+    <Card gradient="pocket" elevated style={[styles.glowCard, { borderColor: `${color}66` }, props.style]}>
+      {props.children}
+    </Card>
+  );
+}
+
 export function Button({
   label,
   onPress,
@@ -251,19 +312,19 @@ export function Button({
   label: string;
   onPress?: () => void;
   icon?: ButtonIcon;
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'thor';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'focus';
   disabled?: boolean;
   loading?: boolean;
   compact?: boolean;
   full?: boolean;
 }) {
-  const isPrimary = variant === 'primary' || variant === 'thor';
+  const isPrimary = variant === 'primary' || variant === 'focus';
   const labelColor = isPrimary ? colors.background : variant === 'danger' ? colors.danger : colors.textPrimary;
   const borderColor =
     variant === 'primary'
       ? colors.accentCyan
-      : variant === 'thor'
-        ? colors.thorlinkAccent
+      : variant === 'focus'
+        ? colors.focus
         : variant === 'danger'
           ? `${colors.danger}88`
           : colors.border;
@@ -303,7 +364,7 @@ export function Button({
             </>
           )}
         </LinearGradient>
-      ) : variant === 'thor' ? (
+      ) : variant === 'focus' ? (
         <LinearGradient colors={gradients.purple} style={[styles.buttonGradient, compact && styles.buttonCompact]}>
           {loading ? (
             <ActivityIndicator size="small" color={colors.white} />
@@ -409,12 +470,14 @@ export function Avatar({
   label,
   size = 48,
   status = 'offline',
+  focus = false,
   thor = false
 }: {
   uri?: string;
   label: string;
   size?: number;
   status?: 'online' | 'offline' | 'pending';
+  focus?: boolean;
   thor?: boolean;
 }) {
   const initials = label
@@ -428,7 +491,7 @@ export function Avatar({
 
   return (
     <LinearGradient
-      colors={thor ? gradients.purple : gradients.cyan}
+      colors={focus || thor ? gradients.focus : gradients.cyan}
       style={[
         styles.avatarRing,
         {
@@ -597,11 +660,19 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1
   },
+  backgroundGlow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 320,
+    opacity: 0.86
+  },
   screen: {
     flex: 1
   },
   scrollScreen: {
-    paddingBottom: spacing.xxxl
+    paddingBottom: 112
   },
   padded: {
     padding: spacing.md,
@@ -623,24 +694,32 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: spacing.md,
+    padding: spacing.lg,
     gap: spacing.md,
     overflow: 'hidden'
   },
+  glassCard: {
+    backgroundColor: colors.surfaceGlass,
+    borderColor: colors.borderStrong
+  },
+  glowCard: {
+    borderWidth: 1,
+    ...shadows.glowCyan
+  },
   button: {
     minHeight: 48,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     paddingHorizontal: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
     borderWidth: 1,
-    backgroundColor: colors.surfaceStrong
+    backgroundColor: colors.control
   },
   buttonGradient: {
     minHeight: 48,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     paddingHorizontal: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
@@ -656,7 +735,7 @@ const styles = StyleSheet.create({
     width: '100%'
   },
   secondaryButton: {
-    backgroundColor: colors.surfaceStrong
+    backgroundColor: colors.control
   },
   ghostButton: {
     backgroundColor: 'transparent'
@@ -671,12 +750,12 @@ const styles = StyleSheet.create({
   iconButton: {
     width: 42,
     height: 42,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceStrong
+    backgroundColor: colors.control
   },
   fieldWrap: {
     gap: spacing.xs
@@ -689,7 +768,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfaceStrong,
+    backgroundColor: colors.control,
     paddingHorizontal: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
@@ -723,7 +802,8 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.sm,
-    borderWidth: 1
+    borderWidth: 1,
+    overflow: 'hidden'
   },
   badgeCompact: {
     minHeight: 24,
@@ -774,7 +854,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs
   },
   skeleton: {
-    backgroundColor: colors.surfaceStrong
+    backgroundColor: colors.surfaceGlow
   },
   segmented: {
     flexDirection: 'row',
@@ -782,8 +862,8 @@ const styles = StyleSheet.create({
     padding: spacing.xxs,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface
+    borderColor: colors.borderGlow,
+    backgroundColor: colors.surfaceGlass
   },
   segment: {
     flex: 1,
@@ -793,7 +873,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   segmentActive: {
-    backgroundColor: colors.cardPressed,
+    backgroundColor: colors.controlActive,
     borderWidth: 1,
     borderColor: `${colors.accentCyan}55`
   },
@@ -810,7 +890,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfaceStrong,
+    backgroundColor: colors.surfaceGlass,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2

@@ -28,7 +28,6 @@ Primary tabs:
 - Home: feed, notifications, friend requests.
 - Discover: users, communities, community creation.
 - Post: text/image post composer.
-- ThorLink: AYN Thor-focused compact dashboard.
 - Profile: current profile, friends, profile posts.
 
 Supporting routes:
@@ -73,16 +72,16 @@ The mobile app must never receive Supabase service-role keys, database passwords
 
 RLS is enabled on all public tables. Client checks improve UX, but database policies are the enforcement boundary. Community creators can manage roles and bans. Creators and moderators can moderate community posts. Normal members can post, like, comment, join, and leave.
 
-## ThorLink
+## Device Adaptation
 
-ThorLink is implemented as a first-class app section, not a fake hardware integration. Current capabilities:
+PocketNet asks users to choose their handheld during onboarding and stores that choice on the profile. The selected device maps to a local profile in `src/design/deviceProfiles.ts`, re-exported through `src/lib/devices.ts` for compatibility. Device profiles currently control:
 
-- Thor profile mode.
-- Thor badge/status updates.
-- Compact dashboard for feed, friends, and screenshot posting.
-- Dual-screen-friendly layout concept with top/bottom screen panels.
+- layout density for compact, wide, large, and dual-screen handhelds;
+- profile/device badge treatment;
+- copy and quick-panel expectations;
+- QA targets for Android handheld classes.
 
-Future native work could add device detection, Android window metrics, launcher shortcuts, and deeper integrations with Thor-specific system tools if AYN exposes safe APIs or intent surfaces.
+Future native work could add Android window metrics, posture detection, launcher shortcuts, and safe second-display integration when public APIs make that practical.
 
 ## Release Strategy
 

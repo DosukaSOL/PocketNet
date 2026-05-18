@@ -20,7 +20,7 @@
 
   <p>
     <a href="#what-pocketnet-is">What it is</a> -
-    <a href="#thorlink">ThorLink</a> -
+    <a href="#device-adaptive-design">Device-adaptive design</a> -
     <a href="#features">Features</a> -
     <a href="#run-it">Run it</a> -
     <a href="#ship-an-apk">Ship an APK</a> -
@@ -44,25 +44,21 @@ PocketNet is designed for handhelds like AYN Thor, AYN Odin, Retroid devices, AY
 
 PocketNet is standalone and is not affiliated with AYN, Cocoon, Daijisho, ES-DE, Beacon, Supabase, Expo, or any other mentioned company/project.
 
-## ThorLink
+## Device-Adaptive Design
 
-<div align="center">
-  <img src="src/assets/images/thorlink-logo.png" alt="ThorLink logo" width="160">
-</div>
+PocketNet asks users which Android handheld they use during onboarding, then tunes the app around that device profile.
 
-ThorLink is the AYN Thor-specific companion mode inside PocketNet. It is built as a real app section today, while leaving room for deeper native integration later.
+Current beta device profiles include AYN Thor, AYN Odin 2/3, AYN Odin 2 Portal, Retroid Pocket devices, AYANEO Pocket devices, ANBERNIC RG556, Logitech G Cloud, Razer Edge, Steam Deck, Android phone/tablet, and a custom handheld profile.
 
-Current ThorLink beta scope:
+Device profiles guide:
 
-- AYN Thor profile mode and device badge.
-- Compact social dashboard.
-- Friend activity panel.
-- Quick status updates.
-- Quick screenshot post entry point.
-- Dual-screen-friendly top/bottom dashboard concept.
-- Future integration notes for safe native Android work.
+- layout density for compact, wide, large, and dual-screen handhelds;
+- device badges and profile identity;
+- dashboard copy and quick-action placement;
+- future Android window-metrics and second-display work;
+- QA expectations for each hardware class.
 
-ThorLink does not fake private or undocumented hardware integrations. The current app works through normal Android/Expo capabilities and documents the path for future device-aware work.
+PocketNet does not fake private or undocumented hardware integrations. The current app works through normal Android/Expo capabilities and leaves a safe path for deeper native device adaptation later.
 
 ## Features
 
@@ -70,7 +66,7 @@ ThorLink does not fake private or undocumented hardware integrations. The curren
 | --- | --- |
 | Auth | Sign up, login, logout, password reset, persistent Supabase sessions |
 | Profiles | Username, display name, avatar, banner, bio, region, social links, handheld/frontend badges |
-| Handheld identity | Favorite device, frontend, systems, games, currently playing, PocketCard-style setup notes |
+| Handheld identity | Onboarding device picker, frontend, systems, games, currently playing, PocketCard-style setup notes |
 | Feed | Text posts, image post flow, home feed, profile posts, community posts |
 | Interactions | Likes, comments, delete own posts, report posts |
 | Friends | User search, friend requests, accept/reject, friend list, block, report |
@@ -81,12 +77,11 @@ ThorLink does not fake private or undocumented hardware integrations. The curren
 
 ## Product Shape
 
-PocketNet has five main tabs:
+PocketNet has four main tabs:
 
 - **Home**: feed, notifications, friend requests.
 - **Discover**: users, communities, community creation.
 - **Post**: text/image composer.
-- **ThorLink**: compact Thor-focused dashboard.
 - **Profile**: PocketCard, friends, profile posts, settings.
 
 Supporting screens include login, signup, onboarding, password reset, profile editing, public user profiles, community detail, and settings.
@@ -227,7 +222,7 @@ src/
   hooks/        Shared hooks
   lib/          Supabase, media, theme, mappers, helpers
   types/        Domain types
-  assets/       PocketNet and ThorLink assets
+  assets/       PocketNet assets
 supabase/
   migrations/   Schema, storage buckets, RLS policies
 docs/           Research, architecture, release, QA
@@ -238,7 +233,11 @@ tests/          Focused automated tests
 ## Docs
 
 - [`docs/RESEARCH.md`](docs/RESEARCH.md): handheld, Thor, frontend, APK, Supabase, and UX research.
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): app structure, data model, security model, ThorLink direction.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): app structure, data model, security model, device-adaptive direction.
+- [`docs/DESIGN.md`](docs/DESIGN.md): PocketNet visual system, tokens, components, motion, and device-adaptive rules.
+- [`docs/UI_REDESIGN_RESEARCH.md`](docs/UI_REDESIGN_RESEARCH.md): visual research and no-vibe-code guardrails.
+- [`docs/UI_AUDIT.md`](docs/UI_AUDIT.md): screen-by-screen frontend quality audit.
+- [`docs/UI_QA_CHECKLIST.md`](docs/UI_QA_CHECKLIST.md): redesign-specific UI QA checklist.
 - [`docs/QA_CHECKLIST.md`](docs/QA_CHECKLIST.md): manual and automated beta checklist.
 - [`docs/APK_RELEASE.md`](docs/APK_RELEASE.md): signing, EAS, sideloading, release checklist.
 - [`SECURITY.md`](SECURITY.md): secrets, RLS, signing, dependency risk notes.
@@ -261,7 +260,7 @@ Current audit note: `npm audit --omit=dev` reports moderate findings through Exp
 
 ## Known Limitations
 
-- ThorLink does not use private or undocumented AYN hardware APIs.
+- Device adaptation does not use private or undocumented hardware APIs.
 - Current game status is manual in v1.
 - Push notifications are not implemented yet.
 - Account deletion needs a production support/admin process.

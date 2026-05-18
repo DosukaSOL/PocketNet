@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { Alert } from 'react-native';
 
 import { ChipPicker } from '@/components/ChipPicker';
-import { AppText, Badge, Button, Card, Row, Screen, Stack, TextArea } from '@/components/ui';
+import { DeviceProfileCard, DeviceSelect } from '@/components/social/DeviceProfileCard';
+import { AppText, Badge, Button, GlowCard, Row, Screen, Stack, TextArea } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { FRONTENDS, HANDHELDS, SYSTEMS } from '@/lib/catalog';
+import { FRONTENDS, SYSTEMS } from '@/lib/catalog';
+import { isDualScreenDevice } from '@/lib/devices';
 import { colors, spacing } from '@/design/tokens';
 
 export default function OnboardingScreen() {
@@ -25,7 +27,7 @@ export default function OnboardingScreen() {
         favoriteFrontend,
         favoriteSystems,
         setupNotes,
-        isThorUser: favoriteHandheld === 'AYN Thor'
+        isThorUser: isDualScreenDevice(favoriteHandheld)
       });
       router.replace('/(tabs)/home');
     } catch (error) {
@@ -45,32 +47,38 @@ export default function OnboardingScreen() {
         </AppText>
       </Stack>
 
-      <Card>
+      <GlowCard tone="cyan">
         <Row>
           <Gamepad2 color={colors.accentCyan} size={20} />
-          <AppText variant="sectionTitle">Favorite handheld</AppText>
+          <Stack gap={2}>
+            <AppText variant="sectionTitle">Choose your handheld</AppText>
+            <AppText variant="metadata" color={colors.textMuted}>
+              PocketNet adapts density, quick actions, and dashboard shape from this choice.
+            </AppText>
+          </Stack>
         </Row>
-        <ChipPicker options={HANDHELDS} value={favoriteHandheld} onChange={(value) => setFavoriteHandheld(String(value))} />
-      </Card>
-      <Card>
+        <DeviceSelect value={favoriteHandheld} onChange={setFavoriteHandheld} />
+        <DeviceProfileCard deviceName={favoriteHandheld} />
+      </GlowCard>
+      <GlowCard tone="purple">
         <Row>
           <MonitorSmartphone color={colors.accentPurple} size={20} />
           <AppText variant="sectionTitle">Favorite frontend</AppText>
         </Row>
         <ChipPicker options={FRONTENDS} value={favoriteFrontend} onChange={(value) => setFavoriteFrontend(String(value))} />
-      </Card>
-      <Card>
+      </GlowCard>
+      <GlowCard tone="cyan">
         <AppText variant="sectionTitle">Systems</AppText>
         <ChipPicker options={SYSTEMS} value={favoriteSystems} multi onChange={(value) => setFavoriteSystems(value as string[])} />
-      </Card>
-      <Card>
+      </GlowCard>
+      <GlowCard tone="focus">
         <TextArea
           label="Setup notes"
           value={setupNotes}
           onChangeText={setSetupNotes}
           placeholder="Controls, frontend, shaders, dock, capture workflow..."
         />
-      </Card>
+      </GlowCard>
       <Button label="Finish setup" icon={CheckCircle2} loading={saving} onPress={() => void finish()} />
     </Screen>
   );

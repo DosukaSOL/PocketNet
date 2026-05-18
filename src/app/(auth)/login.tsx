@@ -5,7 +5,7 @@ import { Gamepad2, LogIn, Mail, ShieldCheck, Sparkles } from 'lucide-react-nativ
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
-import { AppText, Badge, Button, Card, ErrorBanner, Row, Screen, Stack, TextField } from '@/components/ui';
+import { AppText, Badge, Button, ErrorBanner, GlowCard, Row, Screen, Stack, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { colors, gradients, radius, spacing } from '@/design/tokens';
 
@@ -31,12 +31,12 @@ export default function LoginScreen() {
 
   function handlePreview() {
     enterPreview();
-    router.replace('/(tabs)/home');
+    router.replace('/(auth)/onboarding');
   }
 
   return (
     <Screen scroll>
-      <Card gradient="pocket" elevated style={styles.hero}>
+      <GlowCard tone="purple" style={styles.hero}>
         <LinearGradient colors={gradients.aurora} style={styles.heroGlow} />
         <Image source={require('@/assets/images/pocketnet-logo.png')} style={styles.logo} contentFit="contain" />
         <Stack gap={spacing.sm} style={styles.heroStack}>
@@ -46,15 +46,15 @@ export default function LoginScreen() {
             Profiles, screenshots, friends, and communities for Android gaming handhelds.
           </AppText>
         </Stack>
-      </Card>
+      </GlowCard>
 
       {error ? <ErrorBanner body={error} /> : null}
 
-      <Card elevated>
+      <GlowCard tone="cyan">
         <Stack gap={spacing.xs}>
           <AppText variant="sectionTitle">Welcome back</AppText>
           <AppText color={colors.textSecondary}>
-            Sign in to sync your PocketCard, feed, communities, and ThorLink status.
+            Sign in to sync your PocketCard, feed, communities, and device-tuned dashboard.
           </AppText>
         </Stack>
         <TextField
@@ -78,9 +78,9 @@ export default function LoginScreen() {
           <Button label="Create account" compact variant="ghost" onPress={() => router.push('/(auth)/signup')} />
           <Button label="Reset password" compact variant="ghost" onPress={() => router.push('/(auth)/reset')} />
         </Row>
-      </Card>
+      </GlowCard>
 
-      <Card>
+      <GlowCard tone="focus">
         <Row>
           <ShieldCheck color={hasSupabaseConfig ? colors.success : colors.warning} size={20} />
           <Stack gap={2} style={styles.previewCopy}>
@@ -93,7 +93,7 @@ export default function LoginScreen() {
           </Stack>
         </Row>
         <Button label="Preview beta" icon={Sparkles} variant="secondary" onPress={handlePreview} />
-      </Card>
+      </GlowCard>
     </Screen>
   );
 }
