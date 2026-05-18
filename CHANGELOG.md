@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4 - First-Install Flow & Orientation Fixes
+
+- **Fix (auth gate):** APK builds now bake the public `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` into the binary via an `env` block in `eas.json`. Before this, the released APK had no Supabase config so `hasSupabaseConfig` evaluated `false`, which forced the app into preview mode on first launch and skipped the sign-up/login screen.
+- **Fix (no more mock data in release):** `SocialProvider` now starts with empty feeds, communities, friends, friend requests, and notifications whenever a real Supabase session is in play. The mock seed (Mira, Ren, sample posts/communities/requests) only loads in explicit preview mode for local QA — never in a real install.
+- **Fix (preview button leak):** removed the "Preview beta" button from the login screen when Supabase is configured. Released builds force real sign-up or sign-in.
+- **Fix (orientation on dual-screen handhelds):** added `expo-screen-orientation` and a runtime `lockAsync(PORTRAIT_UP)` call in the root layout. The AndroidManifest `screenOrientation="portrait"` hint is preserved as a fallback. Together these stop the activity from launching sideways on the AYN Thor's secondary screen.
+- Bumped `version` → `0.1.4` and Android `versionCode` → `4`.
+
 ## 0.1.3 - Beta Release Hardening
 
 - **Fix (Android build):** pinned `react-native-worklets` to `0.7.4` so it stays compatible with `react-native-reanimated@4.2.1`. The transitive `0.8.3` was failing the EAS Gradle build with `[Reanimated] Your installed version of Worklets (0.8.3) is not compatible with installed version of Reanimated (4.2.1)`.

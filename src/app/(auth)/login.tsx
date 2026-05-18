@@ -84,15 +84,19 @@ export default function LoginScreen() {
         <Row>
           <ShieldCheck color={hasSupabaseConfig ? colors.success : colors.warning} size={20} />
           <Stack gap={2} style={styles.previewCopy}>
-            <AppText variant="cardTitle">Local preview mode</AppText>
+            <AppText variant="cardTitle">
+              {hasSupabaseConfig ? 'Account required' : 'Local preview mode'}
+            </AppText>
             <AppText variant="caption" color={colors.textSecondary}>
               {hasSupabaseConfig
-                ? 'Preview remains available for UI QA without touching production data.'
-                : 'Supabase is not configured yet, so preview mode is enabled for local QA.'}
+                ? 'Create an account or sign in to use PocketNet. Feed, communities, and friends sync to your handheld profile.'
+                : 'Supabase is not configured in this build, so preview mode is available for local QA.'}
             </AppText>
           </Stack>
         </Row>
-        <Button label="Preview beta" icon={Sparkles} variant="secondary" onPress={handlePreview} />
+        {hasSupabaseConfig ? null : (
+          <Button label="Preview beta" icon={Sparkles} variant="secondary" onPress={handlePreview} />
+        )}
       </GlowCard>
     </Screen>
   );

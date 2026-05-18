@@ -1,4 +1,4 @@
-const version = '0.1.0';
+const version = '0.1.4';
 
 export default {
   expo: {
@@ -17,7 +17,7 @@ export default {
     assetBundlePatterns: ['**/*'],
     android: {
       package: 'com.pocketnet.app',
-      versionCode: 1,
+      versionCode: 4,
       adaptiveIcon: {
         foregroundImage: './src/assets/images/pocketnet-logo.png',
         backgroundColor: '#05060A'
@@ -32,7 +32,7 @@ export default {
       output: 'static',
       favicon: './src/assets/images/pocketnet-logo.png'
     },
-    plugins: ['expo-router', 'expo-image-picker', 'expo-audio'],
+    plugins: ['expo-router', 'expo-image-picker', 'expo-audio', 'expo-screen-orientation'],
     experiments: {
       typedRoutes: true
     },

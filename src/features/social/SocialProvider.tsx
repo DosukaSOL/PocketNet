@@ -103,13 +103,19 @@ function slugify(value: string) {
 export function SocialProvider({ children }: PropsWithChildren) {
   const { profile, session, isPreviewMode } = useAuth();
   const currentUserId = profile?.id ?? session?.user.id ?? previewUserId;
-  const [profiles, setProfiles] = useState(seedProfiles);
-  const [posts, setPosts] = useState(seedPosts);
-  const [communities, setCommunities] = useState(seedCommunities);
-  const [friendRequests, setFriendRequests] = useState(seedFriendRequests);
-  const [friendships, setFriendships] = useState(seedFriendships);
+  const [profiles, setProfiles] = useState<Profile[]>(isPreviewMode ? seedProfiles : []);
+  const [posts, setPosts] = useState<Post[]>(isPreviewMode ? seedPosts : []);
+  const [communities, setCommunities] = useState<Community[]>(isPreviewMode ? seedCommunities : []);
+  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>(
+    isPreviewMode ? seedFriendRequests : []
+  );
+  const [friendships, setFriendships] = useState<Friendship[]>(
+    isPreviewMode ? seedFriendships : []
+  );
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [notifications, setNotifications] = useState(seedNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>(
+    isPreviewMode ? seedNotifications : []
+  );
   const [, setReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
