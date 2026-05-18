@@ -441,12 +441,14 @@ export function Badge({
   label,
   tone = 'cyan',
   icon: Icon,
-  compact = false
+  compact = false,
+  align = 'start'
 }: {
   label: string;
   tone?: Tone;
   icon?: LucideIcon;
   compact?: boolean;
+  align?: 'start' | 'center';
 }) {
   const toneColor = toneMap[tone];
   return (
@@ -454,6 +456,7 @@ export function Badge({
       style={[
         styles.badge,
         compact && styles.badgeCompact,
+        align === 'center' && { alignSelf: 'center' },
         { borderColor: `${toneColor}66`, backgroundColor: `${toneColor}18` }
       ]}
     >

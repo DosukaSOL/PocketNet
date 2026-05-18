@@ -22,7 +22,7 @@ type AuthContextValue = {
   isPreviewMode: boolean;
   hasSupabaseConfig: boolean;
   enterPreview: () => void;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (identifier: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, username: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -109,10 +109,26 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const signIn = useCallback(
-    async (email: string, password: string) => {
+    async (identifier: string, password: string) => {
       if (!supabase) {
         enterPreview();
         return;
+      }
+
+      const trimmed = identifier.trim();
+      let email = trimmed;
+
+      if (!trimmed.includes('@')) {
+        const { data, error: lookupError } = await supabase.rpc('email_for_username', {
+          p_username: trimmed.toLowerCase()
+        });
+        if (lookupError) {
+          throw lookupError;
+        }
+        if (!data) {
+          throw new Error('No account found for that username.');
+        }
+        email = data as string;
       }
 
       const { error } = await supabase.auth.signInWithPassword({ email, password });

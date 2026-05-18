@@ -124,3 +124,90 @@ export const motion = {
   entrance: 280,
   shimmer: 900
 };
+
+// ---------------------------------------------------------------------------
+// Themes
+// ---------------------------------------------------------------------------
+// PocketNet supports three palettes. The currently active palette is applied
+// to the `colors` and `gradients` exports above by Object.assign at app boot
+// (see ThemeProvider). A theme change is persisted and applied on the next
+// app launch so existing StyleSheets pick up the new values cleanly.
+
+export type ThemeName = 'pocketnet' | 'dark' | 'light';
+
+type Palette = Partial<typeof colors>;
+type GradientSet = Partial<typeof gradients>;
+
+const pocketnetPalette: Palette = { ...colors };
+const pocketnetGradients: GradientSet = { ...gradients };
+
+const darkPalette: Palette = {
+  background: '#000000',
+  backgroundAlt: '#050505',
+  backgroundElevated: '#0A0A0A',
+  surface: '#101010',
+  surfaceStrong: '#161616',
+  card: 'rgba(20, 20, 22, 0.92)',
+  cardPressed: 'rgba(32, 32, 36, 0.96)',
+  control: 'rgba(28, 28, 30, 0.94)',
+  controlActive: 'rgba(48, 48, 52, 0.96)',
+  surfaceGlass: 'rgba(20, 20, 24, 0.78)',
+  surfaceGlow: 'rgba(255, 255, 255, 0.06)',
+  border: 'rgba(255, 255, 255, 0.10)',
+  borderStrong: 'rgba(255, 255, 255, 0.24)',
+  borderGlow: 'rgba(255, 255, 255, 0.32)',
+  textPrimary: '#F5F5F7',
+  textSecondary: '#B8B8BD',
+  textMuted: '#7A7A80'
+};
+
+const darkGradients: GradientSet = {
+  app: ['#000000', '#050505', '#0A0A0A'] as unknown as typeof gradients.app,
+  appGlow: ['rgba(255,255,255,0.04)', 'rgba(255,255,255,0.02)', 'rgba(255,255,255,0)'] as unknown as typeof gradients.appGlow,
+  hero: ['#0A0A0A', '#050505', '#000000'] as unknown as typeof gradients.hero
+};
+
+const lightPalette: Palette = {
+  background: '#F4F6FB',
+  backgroundAlt: '#EEF1F7',
+  backgroundElevated: '#FFFFFF',
+  surface: '#FFFFFF',
+  surfaceStrong: '#F1F4FA',
+  card: 'rgba(255, 255, 255, 0.96)',
+  cardPressed: 'rgba(232, 238, 248, 0.98)',
+  control: 'rgba(244, 246, 251, 0.96)',
+  controlActive: 'rgba(224, 232, 246, 0.98)',
+  surfaceGlass: 'rgba(255, 255, 255, 0.82)',
+  surfaceGlow: 'rgba(67, 220, 255, 0.10)',
+  border: 'rgba(20, 28, 48, 0.12)',
+  borderStrong: 'rgba(20, 28, 48, 0.24)',
+  borderGlow: 'rgba(67, 140, 220, 0.36)',
+  textPrimary: '#0B1020',
+  textSecondary: '#3C455A',
+  textMuted: '#6B7488',
+  overlay: 'rgba(20, 28, 48, 0.18)'
+};
+
+const lightGradients: GradientSet = {
+  app: ['#F8FAFD', '#EEF1F7', '#E6ECF5'] as unknown as typeof gradients.app,
+  appGlow: ['rgba(67, 220, 255, 0.10)', 'rgba(168, 114, 255, 0.06)', 'rgba(255, 111, 216, 0.04)'] as unknown as typeof gradients.appGlow,
+  hero: ['#FFFFFF', '#F1F4FA', '#E6ECF5'] as unknown as typeof gradients.hero
+};
+
+const palettes: Record<ThemeName, { palette: Palette; gradients: GradientSet }> = {
+  pocketnet: { palette: pocketnetPalette, gradients: pocketnetGradients },
+  dark: { palette: darkPalette, gradients: darkGradients },
+  light: { palette: lightPalette, gradients: lightGradients }
+};
+
+export function applyTheme(name: ThemeName) {
+  const entry = palettes[name];
+  Object.assign(colors, pocketnetPalette, entry.palette);
+  Object.assign(gradients, pocketnetGradients, entry.gradients);
+}
+
+export const themeOptions: { value: ThemeName; label: string; description: string }[] = [
+  { value: 'pocketnet', label: 'PocketNet', description: 'OLED-first neon, the default tuned for handhelds.' },
+  { value: 'dark', label: 'Dark', description: 'Pure black, minimal chroma. Maximum AMOLED contrast.' },
+  { value: 'light', label: 'Light', description: 'High-contrast daylight palette for bright rooms.' }
+];

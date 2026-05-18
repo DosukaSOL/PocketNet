@@ -1,15 +1,24 @@
 import { router } from 'expo-router';
 import type { LucideIcon } from 'lucide-react-native';
-import { ArrowLeft, Bell, Eye, LogOut, Palette, ShieldCheck, UserRound } from 'lucide-react-native';
+import { ArrowLeft, Bell, Eye, LayoutPanelTop, LogOut, Palette, ShieldCheck, UserRound } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { Alert, StyleSheet } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Badge, Button, GlowCard, Row, Screen, Stack } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { colors, spacing } from '@/design/tokens';
+import { useThemeChoice, type LayoutPreference } from '@/features/theme/ThemeProvider';
+import { colors, radius, spacing, themeOptions, type ThemeName } from '@/design/tokens';
+
+const layoutOptions: { value: LayoutPreference; label: string; description: string }[] = [
+  { value: 'standard', label: 'Standard', description: 'Single-screen layout. Default for all handhelds.' },
+  { value: 'split-input-bottom', label: 'Split · Input bottom', description: 'Feed on top, composer + keyboard pinned to the bottom half.' },
+  { value: 'split-input-top', label: 'Split · Input top', description: 'Composer on top, feed below. Best for dual-screen Thor when typing.' },
+  { value: 'compact', label: 'Compact', description: 'Denser spacing for tiny 4–5" handheld screens.' }
+];
 
 export default function SettingsScreen() {
   const { signOut, isPreviewMode, hasSupabaseConfig } = useAuth();
+  const { theme, setTheme, layout, setLayout, pendingRestart } = useThemeChoice();
 
   async function handleSignOut() {
     try {
@@ -58,12 +67,56 @@ export default function SettingsScreen() {
         meta="Push: documented future work"
       />
 
-      <SettingsGroup
-        icon={Palette}
-        title="Appearance"
-        body="PocketNet currently uses an OLED-first dark interface tuned for Android handhelds. Theme switching is on the roadmap."
-        meta="Theme: PocketNet OLED"
-      />
+      <GlowCard tone="cyan">
+        <Row>
+          <Palette color={colors.accentCyan} size={22} />
+          <Stack gap={2} style={styles.groupCopy}>
+            <AppText variant="sectionTitle">Appearance</AppText>
+            <AppText color={colors.textSecondary}>
+              Pick the palette you want PocketNet to use. New theme is applied on the next app launch.
+            </AppText>
+          </Stack>
+        </Row>
+        <Stack gap={spacing.xs}>
+          {themeOptions.map((option) => (
+            <OptionRow
+              key={option.value}
+              active={theme === option.value}
+              label={option.label}
+              description={option.description}
+              onPress={() => void setTheme(option.value as ThemeName)}
+            />
+          ))}
+        </Stack>
+        {pendingRestart ? (
+          <AppText variant="caption" color={colors.warning}>
+            Restart the app to fully apply this theme.
+          </AppText>
+        ) : null}
+      </GlowCard>
+
+      <GlowCard tone="purple">
+        <Row>
+          <LayoutPanelTop color={colors.accentPurple} size={22} />
+          <Stack gap={2} style={styles.groupCopy}>
+            <AppText variant="sectionTitle">Layout</AppText>
+            <AppText color={colors.textSecondary}>
+              Reorganize the composer and feed for dual-screen handhelds like the AYN Thor, or shrink everything for tiny 4–5&quot; screens. Android handles which physical screen the app renders on; PocketNet adjusts its own layout inside that surface.
+            </AppText>
+          </Stack>
+        </Row>
+        <Stack gap={spacing.xs}>
+          {layoutOptions.map((option) => (
+            <OptionRow
+              key={option.value}
+              active={layout === option.value}
+              label={option.label}
+              description={option.description}
+              onPress={() => void setLayout(option.value)}
+            />
+          ))}
+        </Stack>
+      </GlowCard>
 
       <GlowCard tone="pink">
         <AppText variant="sectionTitle">Session</AppText>
@@ -114,5 +167,52 @@ const styles = StyleSheet.create({
   },
   version: {
     textAlign: 'center'
+  },
+  optionRow: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface
+  },
+  optionRowActive: {
+    borderColor: colors.accentCyan,
+    backgroundColor: colors.surfaceStrong
+  },
+  optionDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: colors.border
+  },
+  optionDotActive: {
+    borderColor: colors.accentCyan,
+    backgroundColor: colors.accentCyan
   }
 });
+
+function OptionRow({
+  active,
+  label,
+  description,
+  onPress
+}: {
+  active: boolean;
+  label: string;
+  description: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={[styles.optionRow, active && styles.optionRowActive]}>
+      <Row>
+        <View style={[styles.optionDot, active && styles.optionDotActive]} />
+        <Stack gap={2} style={{ flex: 1 }}>
+          <AppText variant="cardTitle">{label}</AppText>
+          <AppText variant="caption" color={colors.textSecondary}>{description}</AppText>
+        </Stack>
+      </Row>
+    </Pressable>
+  );
+}

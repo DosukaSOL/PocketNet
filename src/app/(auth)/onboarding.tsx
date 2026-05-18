@@ -38,7 +38,7 @@ export default function OnboardingScreen() {
   return (
     <Screen scroll>
       <Stack gap={spacing.xs}>
-        <Badge label="Pocket Profile" tone="cyan" icon={Sparkles} />
+        <Badge label="Pocket Profile" tone="cyan" icon={Sparkles} align="center" />
         <AppText variant="display">Build your handheld identity</AppText>
         <AppText color={colors.textSecondary}>
           These badges make PocketNet useful at a glance: device, frontend, systems, and setup context.

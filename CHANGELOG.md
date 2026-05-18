@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2 - Themes, Layout Modes, Username Login
+
+- Added theme system with **PocketNet**, **Dark**, and **Light** palettes, switchable from Settings. Selection persists and applies on next launch.
+- Added layout preferences (Standard / Split · Input bottom / Split · Input top / Compact) for handheld and dual-screen ergonomics. Composer screen reorders based on the choice.
+- Login now accepts **email OR username** + password. Adds a Supabase `email_for_username` SECURITY DEFINER RPC so anon clients can resolve a username to its login email.
+- Centered the public-beta and other auth-hero badges under the logo with a new `Badge align="center"` prop.
+
 ## 0.1.1 - Ship Polish Pass
 
 - Hardened image uploads to use `fetch().arrayBuffer()` instead of base64+`atob`, fixing fragility on Hermes/web and adding a hard 8 MB cap.

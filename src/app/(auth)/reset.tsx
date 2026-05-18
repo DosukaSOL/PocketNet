@@ -31,7 +31,7 @@ export default function ResetScreen() {
   return (
     <Screen scroll>
       <Stack gap={spacing.xs}>
-        <Badge label="Account recovery" tone="purple" icon={KeyRound} />
+        <Badge label="Account recovery" tone="purple" icon={KeyRound} align="center" />
         <AppText variant="display">Reset password</AppText>
         <AppText color={colors.textSecondary}>Use the email attached to your PocketNet account.</AppText>
       </Stack>

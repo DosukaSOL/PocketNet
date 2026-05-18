@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Gamepad2, LogIn, Mail, ShieldCheck, Sparkles } from 'lucide-react-native';
+import { AtSign, Gamepad2, LogIn, ShieldCheck, Sparkles } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
@@ -11,7 +11,7 @@ import { colors, gradients, radius, spacing } from '@/design/tokens';
 
 export default function LoginScreen() {
   const { signIn, enterPreview, hasSupabaseConfig } = useAuth();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
@@ -20,7 +20,7 @@ export default function LoginScreen() {
     try {
       setError(undefined);
       setLoading(true);
-      await signIn(email.trim(), password);
+      await signIn(identifier.trim(), password);
       router.replace('/(tabs)/home');
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Try again.');
@@ -40,7 +40,7 @@ export default function LoginScreen() {
         <LinearGradient colors={gradients.aurora} style={styles.heroGlow} />
         <Image source={require('@/assets/images/pocketnet-logo.png')} style={styles.logo} contentFit="contain" />
         <Stack gap={spacing.sm} style={styles.heroStack}>
-          <Badge label="PocketNet public beta" tone="cyan" icon={Gamepad2} />
+          <Badge label="PocketNet public beta" tone="cyan" icon={Gamepad2} align="center" />
           <AppText variant="display" style={styles.center}>Handheld-first social</AppText>
           <AppText color={colors.textSecondary} style={styles.center}>
             Profiles, screenshots, friends, and communities for Android gaming handhelds.
@@ -58,13 +58,13 @@ export default function LoginScreen() {
           </AppText>
         </Stack>
         <TextField
-          label="Email"
-          leftIcon={Mail}
+          label="Email or username"
+          leftIcon={AtSign}
           autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
+          autoCorrect={false}
+          value={identifier}
+          onChangeText={setIdentifier}
+          placeholder="you@example.com or your_handle"
         />
         <TextField
           label="Password"

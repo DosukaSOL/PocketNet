@@ -8,12 +8,14 @@ import { StatusComposer } from '@/components/social/StatusComposer';
 import { AppText, Badge, Button, GlowCard, PressableScale, Row, Screen, Stack } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
+import { useThemeChoice } from '@/features/theme/ThemeProvider';
 import { pickImage } from '@/lib/media';
 import { colors, radius, spacing } from '@/design/tokens';
 
 export default function CreateScreen() {
   const { profile } = useAuth();
   const { communities, createPost } = usePocketData();
+  const { layout } = useThemeChoice();
   const [body, setBody] = useState('');
   const [communityId, setCommunityId] = useState<string | undefined>();
   const [imageUri, setImageUri] = useState<string | undefined>();
@@ -49,6 +51,59 @@ export default function CreateScreen() {
     }
   }
 
+  const composer = (
+    <StatusComposer
+      profile={profile}
+      value={body}
+      onChangeText={setBody}
+      imageUri={imageUri}
+      onChooseImage={() => void chooseImage()}
+      onRemoveImage={() => setImageUri(undefined)}
+      onSubmit={() => void publish()}
+      loading={loading}
+      title={communityId ? 'Community post' : 'Profile post'}
+    />
+  );
+
+  const destination = (
+    <GlowCard tone="purple">
+      <Row style={styles.sectionHeader}>
+        <Stack gap={2}>
+          <AppText variant="sectionTitle">Destination</AppText>
+          <AppText variant="metadata" color={colors.textMuted}>
+            Pick where this update should live.
+          </AppText>
+        </Stack>
+        <Badge label={communityId ? 'Community' : 'Profile'} tone={communityId ? 'purple' : 'cyan'} />
+      </Row>
+      <Row style={styles.chips}>
+        <DestinationChip label="Profile" active={!communityId} onPress={() => setCommunityId(undefined)} />
+        {joinedCommunities.map((community) => (
+          <DestinationChip
+            key={community.id}
+            label={community.name}
+            active={communityId === community.id}
+            onPress={() => setCommunityId(community.id)}
+          />
+        ))}
+      </Row>
+      {!joinedCommunities.length ? (
+        <View style={styles.inlineEmpty}>
+          <Users color={colors.accentPurple} size={20} />
+          <Stack gap={2} style={styles.inlineEmptyCopy}>
+            <AppText variant="cardTitle">No joined communities yet</AppText>
+            <AppText variant="caption" color={colors.textSecondary}>
+              You can still post to your profile, or discover a community first.
+            </AppText>
+          </Stack>
+          <Button label="Discover" compact variant="secondary" onPress={() => router.push('/(tabs)/discover')} />
+        </View>
+      ) : null}
+    </GlowCard>
+  );
+
+  const composerFirst = layout === 'split-input-top';
+
   return (
     <Screen scroll>
       <Row style={styles.heroHeader}>
@@ -62,52 +117,8 @@ export default function CreateScreen() {
         </Stack>
       </Row>
 
-      <GlowCard tone="purple">
-        <Row style={styles.sectionHeader}>
-          <Stack gap={2}>
-            <AppText variant="sectionTitle">Destination</AppText>
-            <AppText variant="metadata" color={colors.textMuted}>
-              Pick where this update should live.
-            </AppText>
-          </Stack>
-          <Badge label={communityId ? 'Community' : 'Profile'} tone={communityId ? 'purple' : 'cyan'} />
-        </Row>
-        <Row style={styles.chips}>
-          <DestinationChip label="Profile" active={!communityId} onPress={() => setCommunityId(undefined)} />
-          {joinedCommunities.map((community) => (
-            <DestinationChip
-              key={community.id}
-              label={community.name}
-              active={communityId === community.id}
-              onPress={() => setCommunityId(community.id)}
-            />
-          ))}
-        </Row>
-        {!joinedCommunities.length ? (
-          <View style={styles.inlineEmpty}>
-            <Users color={colors.accentPurple} size={20} />
-            <Stack gap={2} style={styles.inlineEmptyCopy}>
-              <AppText variant="cardTitle">No joined communities yet</AppText>
-              <AppText variant="caption" color={colors.textSecondary}>
-                You can still post to your profile, or discover a community first.
-              </AppText>
-            </Stack>
-            <Button label="Discover" compact variant="secondary" onPress={() => router.push('/(tabs)/discover')} />
-          </View>
-        ) : null}
-      </GlowCard>
-
-      <StatusComposer
-        profile={profile}
-        value={body}
-        onChangeText={setBody}
-        imageUri={imageUri}
-        onChooseImage={() => void chooseImage()}
-        onRemoveImage={() => setImageUri(undefined)}
-        onSubmit={() => void publish()}
-        loading={loading}
-        title={communityId ? 'Community post' : 'Profile post'}
-      />
+      {composerFirst ? composer : destination}
+      {composerFirst ? destination : composer}
     </Screen>
   );
 }

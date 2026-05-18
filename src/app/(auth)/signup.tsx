@@ -33,7 +33,7 @@ export default function SignupScreen() {
   return (
     <Screen scroll>
       <Stack gap={spacing.xs}>
-        <Badge label="Create identity" tone="cyan" icon={UserPlus} />
+        <Badge label="Create identity" tone="cyan" icon={UserPlus} align="center" />
         <AppText variant="display">Claim your PocketNet handle</AppText>
         <AppText color={colors.textSecondary}>
           Choose a username that looks good on profiles, posts, comments, and community member lists.
