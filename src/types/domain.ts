@@ -25,6 +25,7 @@ export type Profile = {
   setupNotes?: string;
   currentGame?: string;
   currentStatus?: string;
+  lastSeenAt?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -145,6 +146,25 @@ export type CreateCommunityInput = {
   name: string;
   description: string;
   bannerUri?: string;
+};
+
+export type DirectMessage = {
+  id: ID;
+  threadId: ID;
+  senderId: ID;
+  body: string;
+  readAt?: string;
+  createdAt: string;
+};
+
+export type DirectThread = {
+  id: ID;
+  participantAId: ID;
+  participantBId: ID;
+  lastMessageAt?: string;
+  createdAt: string;
+  lastMessage?: DirectMessage;
+  unreadCount: number;
 };
 
 export type SupabaseTableName =

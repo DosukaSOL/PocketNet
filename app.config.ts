@@ -1,4 +1,4 @@
-const version = '0.1.4';
+const version = '1.0.0';
 
 export default {
   expo: {
@@ -6,7 +6,10 @@ export default {
     slug: 'pocketnet',
     scheme: 'pocketnet',
     version,
-    orientation: 'portrait',
+    // 'default' lets the OS pick a natural orientation. On dual-screen handhelds
+    // (e.g. AYN Thor) a hard portrait lock made the activity launch sideways on
+    // the secondary panel because that panel's natural orientation is rotated.
+    orientation: 'default',
     userInterfaceStyle: 'dark',
     icon: './src/assets/images/pocketnet-logo.png',
     splash: {
@@ -17,7 +20,7 @@ export default {
     assetBundlePatterns: ['**/*'],
     android: {
       package: 'com.pocketnet.app',
-      versionCode: 4,
+      versionCode: 10,
       adaptiveIcon: {
         foregroundImage: './src/assets/images/pocketnet-logo.png',
         backgroundColor: '#05060A'

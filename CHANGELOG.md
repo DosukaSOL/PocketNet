@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.0.0 - First Stable Release
+
+PocketNet 1.0 is the first build that's been through end-to-end UX, security, and release-engineering hardening. Everything below was added or fixed specifically for v1.0.
+
+### New features
+
+- **Direct messages.** New `dm_threads` + `dm_messages` tables with Row Level Security that allows only the two participants of a thread to read or write. A SECURITY DEFINER RPC `find_or_create_dm_thread(other_user_id uuid)` is the only insertion path, which enforces canonical participant ordering and a unique pair constraint. A new Messages tab shows your conversations with unread badges; tapping a thread opens a full chat surface with realtime updates via Supabase Postgres Changes. A "Message" button on every user profile opens a DM, and so does the friends list.
+- **Multi-step onboarding wizard.** The onboarding screen is now a seven-step flow (profile photo → banner → bio → handheld + frontend → favorite systems & games → social links → preview) with Back, Skip, and Next on every step and a final live preview before saving. Avatar and banner uploads use the same hardened image pipeline as Edit Profile.
+- **Friends list with online status.** New `/friends` screen lists your friends, shows accept/decline buttons for incoming requests, and renders an "online" dot for anyone whose `last_seen_at` heartbeat was in the last two minutes. "Last seen" is rendered as relative time when offline.
+- **Presence heartbeat.** New `profiles.last_seen_at` column and `touch_last_seen()` SECURITY DEFINER RPC. The client pings on bootstrap, every 60 seconds while in foreground, and whenever the app comes back to the foreground. Both the Messages tab and Friends screen consume it.
+- **Banner upload in onboarding.** First-run users can now set a Twitter/Facebook-style banner during the onboarding wizard — same picker, same `banners` bucket as Edit Profile.
+
+### Fixes
+
+- **Orientation on dual-screen handhelds.** `app.config.ts` now declares `orientation: 'default'` and the runtime hook calls `ScreenOrientation.unlockAsync()` instead of forcing PORTRAIT_UP. On the AYN Thor's secondary screen the previous hard-lock made the activity launch sideways because the panel's natural orientation is rotated; letting the OS decide per-display gets it right side up on every screen we tested.
+
+### Security
+
+- New DM tables are RLS-locked. Direct `INSERT` into `dm_threads` is rejected at the policy layer — the only path is the SECURITY DEFINER helper, which itself blocks messaging if either user has blocked the other. `dm_messages` SELECT and INSERT are both bounded to thread participants; UPDATE is only allowed on read-receipts for messages you didn't send.
+- All new functions revoke from `public` + `anon` and grant only to `authenticated`.
+- The `npm run check:secrets` scan and the full QA pipeline (typecheck + lint + jest + secret scan) pass on every commit.
+
+### Versioning
+
+- Bumped `version` → `1.0.0` and Android `versionCode` → `10`.
+
 ## 0.1.4 - First-Install Flow & Orientation Fixes
 
 - **Fix (auth gate):** APK builds now bake the public `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` into the binary via an `env` block in `eas.json`. Before this, the released APK had no Supabase config so `hasSupabaseConfig` evaluated `false`, which forced the app into preview mode on first launch and skipped the sign-up/login screen.

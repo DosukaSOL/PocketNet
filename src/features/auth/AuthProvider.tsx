@@ -6,8 +6,10 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from 'react';
+import { AppState } from 'react-native';
 
 import { profileFromRow, profileToRowPatch } from '@/lib/mappers';
 import { previewUserId, seedProfiles } from '@/lib/mockData';
@@ -221,6 +223,36 @@ export function AuthProvider({ children }: PropsWithChildren) {
     },
     [profile, session]
   );
+
+  // Presence heartbeat: ping the server every minute and on app foreground so
+  // friends can show an "online" dot. Best-effort — failures are silent.
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (!supabase || !session?.user || isPreviewMode) {
+      return;
+    }
+    const ping = () => {
+      try {
+        void Promise.resolve(supabase!.rpc('touch_last_seen')).catch(() => undefined);
+      } catch {
+        // Swallow — presence is best-effort.
+      }
+    };
+    ping();
+    heartbeatRef.current = setInterval(ping, 60_000);
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        ping();
+      }
+    });
+    return () => {
+      if (heartbeatRef.current) {
+        clearInterval(heartbeatRef.current);
+        heartbeatRef.current = null;
+      }
+      sub.remove();
+    };
+  }, [isPreviewMode, session]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

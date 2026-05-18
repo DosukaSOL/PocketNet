@@ -1,9 +1,11 @@
 import { Tabs } from 'expo-router';
-import { Compass, Home, PlusCircle, UserRound } from 'lucide-react-native';
+import { Compass, Home, MessageCircle, PlusCircle, UserRound } from 'lucide-react-native';
 
 import { colors, radius, shadows, spacing } from '@/design/tokens';
+import { useMessaging } from '@/features/messaging/MessagingProvider';
 
 export default function TabsLayout() {
+  const { totalUnread } = useMessaging();
   return (
     <Tabs
       screenOptions={{
@@ -38,6 +40,15 @@ export default function TabsLayout() {
       <Tabs.Screen name="home" options={{ title: 'Home', tabBarIcon: icon(Home) }} />
       <Tabs.Screen name="discover" options={{ title: 'Discover', tabBarIcon: icon(Compass) }} />
       <Tabs.Screen name="create" options={{ title: 'Post', tabBarIcon: icon(PlusCircle) }} />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: 'Messages',
+          tabBarIcon: icon(MessageCircle),
+          tabBarBadge: totalUnread > 0 ? (totalUnread > 99 ? '99+' : String(totalUnread)) : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.accentPink, color: colors.textPrimary }
+        }}
+      />
       <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: icon(UserRound) }} />
     </Tabs>
   );

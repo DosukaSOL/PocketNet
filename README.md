@@ -15,7 +15,7 @@
     <img src="https://img.shields.io/badge/build-Expo%20SDK%2055-000020?style=for-the-badge&logo=expo&logoColor=white" alt="Expo SDK 55">
     <img src="https://img.shields.io/badge/backend-Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
     <img src="https://img.shields.io/badge/release-APK%20first-4D7CFF?style=for-the-badge" alt="APK first">
-    <img src="https://img.shields.io/badge/status-public%20beta%20foundation-B6F35C?style=for-the-badge" alt="Public beta foundation">
+    <img src="https://img.shields.io/badge/status-v1.0%20stable-7C3AED?style=for-the-badge" alt="v1.0 stable">
   </p>
 
   <p>
@@ -46,13 +46,13 @@ PocketNet is standalone and is not affiliated with AYN, Cocoon, Daijisho, ES-DE,
 
 ## Beta Status — What Works & What Doesn't
 
-PocketNet is in **public beta**. This is an honest snapshot for anyone downloading the APK.
+PocketNet **v1.0** is the first stable release. This is an honest snapshot for anyone downloading the APK.
 
 ### Working
 
 - Account creation with email **or** username, plus password.
 - Persistent login sessions across app restarts.
-- Onboarding (device picker, frontend, systems, games, currently playing, setup notes).
+- **Multi-step onboarding wizard:** profile photo → banner → bio → handheld + frontend → favorite systems & games → social links → preview. Every step has Back, Skip, and Next.
 - Profile create + edit: display name, username, avatar, banner, bio, region, social links.
 - Handheld + frontend badges on profiles.
 - Home feed with auto-refresh on focus.
@@ -61,12 +61,15 @@ PocketNet is in **public beta**. This is an honest snapshot for anyone downloadi
 - Likes, comments, delete own posts, report posts.
 - Discover tab: search users, browse communities.
 - Friend requests: send, accept, reject, friend list, block, report.
+- **Friends screen** with online dots and incoming-request accept/decline.
+- **Direct messages** with Row-Level-Security that lets only the two participants of a thread read or write. Realtime delivery via Supabase Postgres Changes. Unread badges on the Messages tab.
+- **Presence heartbeat** — `last_seen_at` updated on every foreground/heartbeat tick so friends and DM threads can show "online" / "last seen Nm ago".
 - Communities: create, join, leave, post, pin, moderator controls, bans, reports.
 - In-app notifications screen with mark-all-read.
 - Theme system: PocketNet (default), Dark, Light — applies on next app launch.
 - Layout preferences: Standard, Split (input bottom), Split (input top), Compact.
 - Settings screen: theme, layout, sign out.
-- Row Level Security on all Supabase tables.
+- Row Level Security on **every** Supabase table, including DMs.
 - No service-role key or private secret in the client.
 
 ### Known limitations / not working yet

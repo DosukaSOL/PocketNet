@@ -9,6 +9,7 @@ import { ProfileHeader, type ProfileTab } from '@/components/ProfileHeader';
 import { SetupCard } from '@/components/social/SetupCard';
 import { Button, EmptyState, Row, Screen, Stack } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { useMessaging } from '@/features/messaging/MessagingProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
 import { spacing } from '@/design/tokens';
 
@@ -29,7 +30,9 @@ export default function UserScreen() {
     joinCommunity,
     leaveCommunity
   } = usePocketData();
+  const { openThreadWith } = useMessaging();
   const [tab, setTab] = useState<ProfileTab>('posts');
+  const [openingDm, setOpeningDm] = useState(false);
   const target = getProfile(id);
 
   if (!target) {
@@ -71,10 +74,37 @@ export default function UserScreen() {
     ]);
   }
 
+  async function handleMessage() {
+    if (openingDm) return;
+    setOpeningDm(true);
+    try {
+      const threadId = await openThreadWith(activeTarget.id);
+      if (threadId) {
+        router.push(`/messages/${threadId}` as never);
+      } else {
+        Alert.alert('Could not open chat', 'Try again in a moment.');
+      }
+    } catch (error) {
+      Alert.alert('Could not open chat', error instanceof Error ? error.message : 'Try again.');
+    } finally {
+      setOpeningDm(false);
+    }
+  }
+
   return (
     <Screen scroll>
       <Row style={styles.topActions}>
         <Button label="Back" icon={ArrowLeft} compact variant="ghost" onPress={() => router.back()} />
+        {activeTarget.id !== profile?.id ? (
+          <Button
+            label="Message"
+            icon={MessageCircle}
+            compact
+            variant="secondary"
+            onPress={() => void handleMessage()}
+            loading={openingDm}
+          />
+        ) : null}
       </Row>
       <ProfileHeader
         profile={activeTarget}
@@ -133,6 +163,6 @@ export default function UserScreen() {
 
 const styles = StyleSheet.create({
   topActions: {
-    justifyContent: 'flex-start'
+    justifyContent: 'space-between'
   }
 });

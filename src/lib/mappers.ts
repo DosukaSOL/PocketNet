@@ -34,6 +34,7 @@ export function profileFromRow(row: ProfileRow): Profile {
     setupNotes: row.setup_notes ? String(row.setup_notes) : undefined,
     currentGame: row.current_game ? String(row.current_game) : undefined,
     currentStatus: row.current_status ? String(row.current_status) : undefined,
+    lastSeenAt: row.last_seen_at ? String(row.last_seen_at) : undefined,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at)
   };
