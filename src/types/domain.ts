@@ -25,7 +25,6 @@ export type Profile = {
   setupNotes?: string;
   currentGame?: string;
   currentStatus?: string;
-  isThorUser?: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -136,7 +135,6 @@ export type UpdateProfileInput = Partial<
     | 'setupNotes'
     | 'currentGame'
     | 'currentStatus'
-    | 'isThorUser'
   >
 > & {
   avatarUri?: string;

@@ -29,7 +29,6 @@ export const seedProfiles: Profile[] = [
     setupNotes: 'Dual-screen profile, compact quick actions, docked capture workflow.',
     currentGame: 'Chrono Trigger',
     currentStatus: 'Testing a clean split-screen dashboard.',
-    isThorUser: true,
     createdAt: now,
     updatedAt: now
   },
@@ -64,7 +63,6 @@ export const seedProfiles: Profile[] = [
     setupNotes: 'Per-system bezels and a dedicated screenshots album.',
     currentGame: 'Fantasy Life',
     currentStatus: 'Sharing a setup card soon.',
-    isThorUser: false,
     createdAt: now,
     updatedAt: now
   }

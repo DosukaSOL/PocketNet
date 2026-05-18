@@ -143,30 +143,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
       throw error;
     }
 
-    if (data.user) {
-      const timestamp = new Date().toISOString();
-      const displayName = username
-        .split(/[-_.\s]/)
-        .filter(Boolean)
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ');
-
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        id: data.user.id,
-        username,
-        display_name: displayName || username,
-        social_links: {},
-        favorite_systems: [],
-        favorite_games: [],
-        created_at: timestamp,
-        updated_at: timestamp
-      });
-
-      if (profileError) {
-        throw profileError;
-      }
+    if (data.session?.user) {
+      setIsPreviewMode(false);
+      await loadProfile(data.session.user.id);
     }
-  }, []);
+  }, [loadProfile]);
 
   const resetPassword = useCallback(async (email: string) => {
     if (!supabase) {

@@ -32,7 +32,7 @@ export default {
       output: 'static',
       favicon: './src/assets/images/pocketnet-logo.png'
     },
-    plugins: ['expo-router', 'expo-image-picker'],
+    plugins: ['expo-router', 'expo-image-picker', 'expo-audio'],
     experiments: {
       typedRoutes: true
     },

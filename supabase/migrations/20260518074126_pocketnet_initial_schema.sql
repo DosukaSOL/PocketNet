@@ -38,7 +38,6 @@ create table public.profiles (
   setup_notes text check (char_length(coalesce(setup_notes, '')) <= 1000),
   current_game text check (char_length(coalesce(current_game, '')) <= 100),
   current_status text check (char_length(coalesce(current_status, '')) <= 160),
-  is_thor_user boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

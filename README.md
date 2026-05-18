@@ -146,6 +146,8 @@ If Supabase env values are missing, PocketNet opens in local preview mode with s
 
 ## Supabase Setup
 
+Backend status: the live Supabase project has been provisioned with PocketNet migrations and Storage buckets. Local `.env` contains only public mobile-safe Supabase values and is ignored by git.
+
 1. Create a Supabase project.
 2. Apply migrations from `supabase/migrations`.
 3. Confirm Storage buckets exist:
@@ -164,6 +166,8 @@ supabase db push
 
 The mobile client must use only public-safe Supabase keys. Service-role keys belong on trusted backend infrastructure only.
 
+Launch notes: [`docs/BACKEND_LAUNCH.md`](docs/BACKEND_LAUNCH.md)
+
 ## Quality Checks
 
 ```sh
@@ -178,6 +182,11 @@ All together:
 ```sh
 npm run qa
 ```
+
+GitHub Actions:
+
+- `PocketNet QA` runs typecheck, lint, tests, and secret scan.
+- `Build Android APK` is ready for EAS/GitHub Releases once `EXPO_TOKEN` and Android signing credentials are configured.
 
 Expo dependency compatibility:
 
@@ -209,6 +218,7 @@ Release rules:
 - Use the same signing certificate for updates.
 - Publish APKs through GitHub Releases and the PocketNet website.
 - Include a SHA-256 checksum with every release.
+- GitHub release automation is in `.github/workflows/release-apk.yml`; it requires repository secret `EXPO_TOKEN`.
 
 Full release guide: [`docs/APK_RELEASE.md`](docs/APK_RELEASE.md)
 
@@ -238,6 +248,7 @@ tests/          Focused automated tests
 - [`docs/UI_REDESIGN_RESEARCH.md`](docs/UI_REDESIGN_RESEARCH.md): visual research and no-vibe-code guardrails.
 - [`docs/UI_AUDIT.md`](docs/UI_AUDIT.md): screen-by-screen frontend quality audit.
 - [`docs/UI_QA_CHECKLIST.md`](docs/UI_QA_CHECKLIST.md): redesign-specific UI QA checklist.
+- [`docs/BACKEND_LAUNCH.md`](docs/BACKEND_LAUNCH.md): live Supabase status and backend/server launch notes.
 - [`docs/QA_CHECKLIST.md`](docs/QA_CHECKLIST.md): manual and automated beta checklist.
 - [`docs/APK_RELEASE.md`](docs/APK_RELEASE.md): signing, EAS, sideloading, release checklist.
 - [`SECURITY.md`](SECURITY.md): secrets, RLS, signing, dependency risk notes.

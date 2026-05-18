@@ -8,7 +8,6 @@ import { DeviceProfileCard, DeviceSelect } from '@/components/social/DeviceProfi
 import { AppText, Badge, Button, GlowCard, Row, Screen, Stack, TextArea } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { FRONTENDS, SYSTEMS } from '@/lib/catalog';
-import { isDualScreenDevice } from '@/lib/devices';
 import { colors, spacing } from '@/design/tokens';
 
 export default function OnboardingScreen() {
@@ -26,8 +25,7 @@ export default function OnboardingScreen() {
         favoriteHandheld,
         favoriteFrontend,
         favoriteSystems,
-        setupNotes,
-        isThorUser: isDualScreenDevice(favoriteHandheld)
+        setupNotes
       });
       router.replace('/(tabs)/home');
     } catch (error) {

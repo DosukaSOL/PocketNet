@@ -3,6 +3,7 @@ import { Settings, UserRound } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
+import { BrandMark } from '@/components/BrandMark';
 import { CommunityCard } from '@/components/CommunityCard';
 import { PostCard } from '@/components/PostCard';
 import { ProfileHeader, type ProfileTab } from '@/components/ProfileHeader';
@@ -37,6 +38,7 @@ export default function ProfileScreen() {
   return (
     <Screen scroll>
       <Row style={styles.headerActions}>
+        <BrandMark size={34} />
         <Stack gap={2} style={styles.headerTitle}>
           <AppText variant="metadata" color={colors.textMuted}>Your identity</AppText>
           <AppText variant="screenTitle">Profile</AppText>

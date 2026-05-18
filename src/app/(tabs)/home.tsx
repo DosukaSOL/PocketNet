@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { PostCard } from '@/components/PostCard';
+import { BrandMark } from '@/components/BrandMark';
 import { DeviceProfileCard } from '@/components/social/DeviceProfileCard';
 import { NotificationCard } from '@/components/social/NotificationCard';
 import { UserCard } from '@/components/social/UserCard';
@@ -41,6 +42,7 @@ export default function HomeScreen() {
     <Screen scroll refreshing={isLoading} onRefresh={() => void refresh()}>
       <GlowCard tone={device.category === 'dual-screen' ? 'focus' : 'cyan'} style={styles.commandBar}>
         <Row style={styles.heroTop}>
+          <BrandMark size={42} />
           <Stack gap={spacing.xs} style={styles.heroCopy}>
             <Badge label={device.badgeLabel} tone={device.category === 'dual-screen' ? 'focus' : 'cyan'} />
             <AppText variant="screenTitle">PocketNet</AppText>

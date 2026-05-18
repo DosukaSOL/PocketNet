@@ -34,7 +34,6 @@ export function profileFromRow(row: ProfileRow): Profile {
     setupNotes: row.setup_notes ? String(row.setup_notes) : undefined,
     currentGame: row.current_game ? String(row.current_game) : undefined,
     currentStatus: row.current_status ? String(row.current_status) : undefined,
-    isThorUser: Boolean(row.is_thor_user),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at)
   };
@@ -56,7 +55,6 @@ export function profileToRowPatch(profile: Partial<Profile>) {
     setup_notes: profile.setupNotes,
     current_game: profile.currentGame,
     current_status: profile.currentStatus,
-    is_thor_user: profile.isThorUser,
     updated_at: new Date().toISOString()
   };
 }

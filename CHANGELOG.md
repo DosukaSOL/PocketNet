@@ -8,6 +8,9 @@
 - Added profiles, media upload hooks, feed, comments, likes, friends, communities, reports, blocks, notifications, and settings screens.
 - Added device-adaptive onboarding and layout tuning for Android handheld profiles.
 - Added Premium Neon Handheld Social frontend system with device profiles, polished social cards, motion primitives, redesigned onboarding/feed/profile/discovery/community/settings surfaces, and removal of the old separated device-specific tab.
+- Added branded startup intro animation with PocketNet logo and a short local jingle.
+- Provisioned live Supabase migrations and added backend hardening migrations.
+- Added GitHub Actions for QA and EAS APK release automation.
 - Added Supabase schema, storage buckets, and RLS policies.
 - Added APK release documentation and secret scanning.
 - Added focused tests for moderation rules and repository safety.

@@ -3,6 +3,7 @@ import { RadioTower, Users } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
+import { BrandMark } from '@/components/BrandMark';
 import { StatusComposer } from '@/components/social/StatusComposer';
 import { AppText, Badge, Button, GlowCard, PressableScale, Row, Screen, Stack } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -50,13 +51,16 @@ export default function CreateScreen() {
 
   return (
     <Screen scroll>
-      <Stack gap={spacing.xs}>
-        <Badge label="Composer" tone="pink" icon={RadioTower} />
-        <AppText variant="display">Share the moment</AppText>
-        <AppText color={colors.textSecondary}>
-          Post to your profile or drop a screenshot note into one of your communities.
-        </AppText>
-      </Stack>
+      <Row style={styles.heroHeader}>
+        <BrandMark size={38} />
+        <Stack gap={spacing.xs} style={styles.heroCopy}>
+          <Badge label="Composer" tone="pink" icon={RadioTower} />
+          <AppText variant="display">Share the moment</AppText>
+          <AppText color={colors.textSecondary}>
+            Post to your profile or drop a screenshot note into one of your communities.
+          </AppText>
+        </Stack>
+      </Row>
 
       <GlowCard tone="purple">
         <Row style={styles.sectionHeader}>
@@ -128,6 +132,13 @@ const styles = StyleSheet.create({
   sectionHeader: {
     justifyContent: 'space-between',
     alignItems: 'center'
+  },
+  heroHeader: {
+    alignItems: 'flex-start'
+  },
+  heroCopy: {
+    flex: 1,
+    minWidth: 0
   },
   chips: {
     flexWrap: 'wrap'

@@ -1,12 +1,16 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { StartupIntro } from '@/components/StartupIntro';
 import { AuthProvider } from '@/features/auth/AuthProvider';
 import { SocialProvider } from '@/features/social/SocialProvider';
 import { colors } from '@/lib/theme';
 
 export default function RootLayout() {
+  const [introVisible, setIntroVisible] = useState(true);
+
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <AuthProvider>
@@ -26,6 +30,7 @@ export default function RootLayout() {
             <Stack.Screen name="edit-profile" />
             <Stack.Screen name="settings" />
           </Stack>
+          {introVisible ? <StartupIntro onDone={() => setIntroVisible(false)} /> : null}
         </SocialProvider>
       </AuthProvider>
     </GestureHandlerRootView>

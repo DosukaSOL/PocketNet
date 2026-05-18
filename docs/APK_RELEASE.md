@@ -38,6 +38,22 @@ Create a production APK:
 eas build --platform android --profile production
 ```
 
+## GitHub Actions APK Workflow
+
+The repository includes `.github/workflows/release-apk.yml`.
+
+Required GitHub repository secrets:
+
+- `EXPO_TOKEN`
+- `EXPO_PUBLIC_SUPABASE_URL`
+- `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+
+Required GitHub repository variable:
+
+- `EXPO_PUBLIC_POCKETNET_SITE_URL`
+
+The Supabase public values are already configured in GitHub. `EXPO_TOKEN` must be created from the Expo account that owns the PocketNet EAS project. Android signing credentials must be configured in EAS before this workflow can produce a shippable signed APK.
+
 For local native builds, generate Android project files only when needed:
 
 ```sh

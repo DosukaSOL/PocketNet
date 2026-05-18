@@ -9,7 +9,6 @@ import { DeviceProfileCard, DeviceSelect } from '@/components/social/DeviceProfi
 import { AppText, Badge, Button, Card, Row, Screen, Stack, TextArea, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { FRONTENDS, REGIONS, SAMPLE_GAMES, SYSTEMS } from '@/lib/catalog';
-import { isDualScreenDevice } from '@/lib/devices';
 import { pickImage, uploadImage } from '@/lib/media';
 import { colors, radius, spacing } from '@/design/tokens';
 
@@ -90,7 +89,6 @@ export default function EditProfileScreen() {
           github,
           website
         },
-        isThorUser: isDualScreenDevice(favoriteHandheld),
         avatarUri: avatarUrl,
         bannerUri: bannerUrl
       });

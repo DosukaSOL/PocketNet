@@ -3,6 +3,7 @@ import { Compass, Plus, Search, UsersRound } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Alert, StyleSheet } from 'react-native';
 
+import { BrandMark } from '@/components/BrandMark';
 import { CommunityCard } from '@/components/CommunityCard';
 import { UserCard } from '@/components/social/UserCard';
 import { AppText, Badge, Button, EmptyState, GlowCard, Row, Screen, SearchBar, Stack, TextArea, TextField } from '@/components/ui';
@@ -51,13 +52,16 @@ export default function DiscoverScreen() {
 
   return (
     <Screen scroll>
-      <Stack gap={spacing.xs}>
-        <Badge label="Discovery" tone="cyan" icon={Compass} />
-        <AppText variant="display">Find your next handheld circle</AppText>
-        <AppText color={colors.textSecondary}>
-          Search players, device crews, frontend setups, and communities that match how you play.
-        </AppText>
-      </Stack>
+      <Row style={styles.heroHeader}>
+        <BrandMark size={38} />
+        <Stack gap={spacing.xs} style={styles.heroCopy}>
+          <Badge label="Discovery" tone="cyan" icon={Compass} />
+          <AppText variant="display">Find your next handheld circle</AppText>
+          <AppText color={colors.textSecondary}>
+            Search players, device crews, frontend setups, and communities that match how you play.
+          </AppText>
+        </Stack>
+      </Row>
 
       <SearchBar
         icon={Search}
@@ -165,5 +169,12 @@ const styles = StyleSheet.create({
   },
   formCopy: {
     flex: 1
+  },
+  heroHeader: {
+    alignItems: 'flex-start'
+  },
+  heroCopy: {
+    flex: 1,
+    minWidth: 0
   }
 });
