@@ -1,6 +1,6 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Compass, Plus, Search, UsersRound } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Alert, StyleSheet } from 'react-native';
 
 import { BrandMark } from '@/components/BrandMark';
@@ -19,7 +19,8 @@ export default function DiscoverScreen() {
     sendFriendRequest,
     joinCommunity,
     leaveCommunity,
-    createCommunity
+    createCommunity,
+    refresh
   } = usePocketData();
   const [query, setQuery] = useState('');
   const [communityName, setCommunityName] = useState('');
@@ -29,6 +30,12 @@ export default function DiscoverScreen() {
   const communities = useMemo(() => searchCommunities(query), [query, searchCommunities]);
   const featuredCommunities = communities.slice(0, 2);
   const otherCommunities = communities.slice(2);
+
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh])
+  );
 
   async function handleCreateCommunity() {
     try {

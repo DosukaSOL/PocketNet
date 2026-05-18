@@ -29,6 +29,7 @@ export default function RootLayout() {
             <Stack.Screen name="user/[id]" />
             <Stack.Screen name="edit-profile" />
             <Stack.Screen name="settings" />
+            <Stack.Screen name="notifications" />
           </Stack>
           {introVisible ? <StartupIntro onDone={() => setIntroVisible(false)} /> : null}
         </SocialProvider>

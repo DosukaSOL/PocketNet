@@ -1,14 +1,14 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Bell, Compass, RefreshCw, UserX } from 'lucide-react-native';
-import { useMemo } from 'react';
-import { StyleSheet } from 'react-native';
+import { useCallback, useMemo } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { PostCard } from '@/components/PostCard';
 import { BrandMark } from '@/components/BrandMark';
 import { DeviceProfileCard } from '@/components/social/DeviceProfileCard';
 import { NotificationCard } from '@/components/social/NotificationCard';
 import { UserCard } from '@/components/social/UserCard';
-import { AppText, Badge, Button, EmptyState, GlowCard, Row, Screen, Skeleton, Stack, StatPill } from '@/components/ui';
+import { AppText, Avatar, Badge, Button, EmptyState, GlowCard, IconButton, PressableScale, Row, Screen, Skeleton, Stack, StatPill } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
 import { colors, radius, spacing } from '@/design/tokens';
@@ -37,6 +37,16 @@ export default function HomeScreen() {
     () => friends.filter((friend) => friend.currentGame || friend.currentStatus).slice(0, 3),
     [friends]
   );
+  const onlineNow = useMemo(
+    () => friends.filter((friend) => Boolean(friend.currentGame)).slice(0, 12),
+    [friends]
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh])
+  );
 
   return (
     <Screen scroll refreshing={isLoading} onRefresh={() => void refresh()}>
@@ -50,7 +60,15 @@ export default function HomeScreen() {
               A social home tuned for {device.name}: {device.layoutHint.toLowerCase()}
             </AppText>
           </Stack>
-          <Button label="Sync" icon={RefreshCw} compact variant="secondary" onPress={() => void refresh()} />
+          <Stack gap={spacing.xs}>
+            <IconButton
+              icon={Bell}
+              label={unread.length ? `${unread.length} unread notifications` : 'Open notifications'}
+              tone={unread.length ? 'warning' : 'neutral'}
+              onPress={() => router.push('/notifications')}
+            />
+            <Button label="Sync" icon={RefreshCw} compact variant="secondary" onPress={() => void refresh()} />
+          </Stack>
         </Row>
         <Row style={styles.stats}>
           <StatPill label="Feed" value={feed.length} />
@@ -61,6 +79,53 @@ export default function HomeScreen() {
 
       <DeviceProfileCard deviceName={profile?.favoriteHandheld} />
 
+      {onlineNow.length ? (
+        <Stack gap={spacing.sm}>
+          <Row style={styles.sectionHeader}>
+            <Stack gap={2}>
+              <AppText variant="sectionTitle">Online now</AppText>
+              <AppText variant="metadata" color={colors.textMuted}>
+                Friends with a live game status.
+              </AppText>
+            </Stack>
+            <Badge label={`${onlineNow.length} live`} tone="lime" />
+          </Row>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.onlineRow}
+          >
+            {onlineNow.map((friend) => (
+              <PressableScale
+                key={friend.id}
+                onPress={() => router.push(`/user/${friend.id}`)}
+                style={styles.onlineChip}
+              >
+                <View style={styles.onlineAvatar}>
+                  <Avatar
+                    label={friend.displayName}
+                    uri={friend.avatarUrl}
+                    size={54}
+                    status="online"
+                  />
+                </View>
+                <AppText variant="metadata" numberOfLines={1} style={styles.onlineName}>
+                  {friend.displayName.split(' ')[0]}
+                </AppText>
+                <AppText
+                  variant="metadata"
+                  color={colors.online}
+                  numberOfLines={1}
+                  style={styles.onlineGame}
+                >
+                  {friend.currentGame}
+                </AppText>
+              </PressableScale>
+            ))}
+          </ScrollView>
+        </Stack>
+      ) : null}
+
       {unread.length ? (
         <Stack gap={spacing.sm}>
           <Row style={styles.sectionHeader}>
@@ -68,7 +133,10 @@ export default function HomeScreen() {
               <Bell color={colors.warning} size={18} />
               <AppText variant="sectionTitle">Notifications</AppText>
             </Row>
-            <Button label="Mark read" compact variant="ghost" onPress={() => void markNotificationsRead()} />
+            <Row>
+              <Button label="Open all" compact variant="ghost" onPress={() => router.push('/notifications')} />
+              <Button label="Mark read" compact variant="ghost" onPress={() => void markNotificationsRead()} />
+            </Row>
           </Row>
           {unread.slice(0, 3).map((notification) => (
             <NotificationCard key={notification.id} notification={notification} />
@@ -190,5 +258,28 @@ const styles = StyleSheet.create({
   },
   emptyActions: {
     flexWrap: 'wrap'
+  },
+  onlineRow: {
+    gap: spacing.sm,
+    paddingVertical: 2,
+    paddingRight: spacing.sm
+  },
+  onlineChip: {
+    width: 96,
+    alignItems: 'center',
+    padding: spacing.xs,
+    gap: 4
+  },
+  onlineAvatar: {
+    alignItems: 'center'
+  },
+  onlineName: {
+    color: colors.textPrimary,
+    textAlign: 'center',
+    width: '100%'
+  },
+  onlineGame: {
+    textAlign: 'center',
+    width: '100%'
   }
 });

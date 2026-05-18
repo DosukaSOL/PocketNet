@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 - Ship Polish Pass
+
+- Hardened image uploads to use `fetch().arrayBuffer()` instead of base64+`atob`, fixing fragility on Hermes/web and adding a hard 8 MB cap.
+- Added a dedicated `/notifications` screen with mark-all-read, accessible from a Bell icon in the home command bar.
+- Added an "Online now" horizontal friends carousel on the home feed for instant glanceability.
+- Home and Discover now auto-refresh from Supabase on tab focus.
+
 ## 0.1.0 - Public Beta Foundation
 
 - Built Expo Router Android app structure.

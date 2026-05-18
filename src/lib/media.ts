@@ -1,4 +1,3 @@
-import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 
 import { createId } from '@/lib/id';
@@ -9,6 +8,21 @@ export type PickedImage = {
   width?: number;
   height?: number;
 };
+
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+
+function inferContentType(uri: string, fallbackExt: string): { contentType: string; extension: string } {
+  const lower = uri.split('?')[0].toLowerCase();
+  if (lower.endsWith('.png')) return { contentType: 'image/png', extension: 'png' };
+  if (lower.endsWith('.webp')) return { contentType: 'image/webp', extension: 'webp' };
+  if (lower.endsWith('.heic') || lower.endsWith('.heif')) {
+    return { contentType: 'image/heic', extension: 'heic' };
+  }
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+    return { contentType: 'image/jpeg', extension: 'jpg' };
+  }
+  return { contentType: 'image/jpeg', extension: fallbackExt || 'jpg' };
+}
 
 export async function pickImage(): Promise<PickedImage | null> {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -43,17 +57,30 @@ export async function uploadImage(args: {
     return args.uri;
   }
 
-  const extension = args.uri.split('.').pop()?.toLowerCase() || 'jpg';
-  const path = `${args.userId}/${createId('image')}.${extension}`;
-  const bytes = await FileSystem.readAsStringAsync(args.uri, {
-    encoding: FileSystem.EncodingType.Base64
-  });
+  // Fetch the local file as a binary ArrayBuffer. This avoids fragile base64
+  // decoding paths and is the supported pattern for Supabase JS uploads on
+  // React Native, web, and Hermes.
+  const response = await fetch(args.uri);
+  if (!response.ok) {
+    throw new Error('Could not read selected image.');
+  }
 
-  const arrayBuffer = Uint8Array.from(atob(bytes), (char) => char.charCodeAt(0)).buffer;
+  const arrayBuffer = await response.arrayBuffer();
+  if (arrayBuffer.byteLength === 0) {
+    throw new Error('Selected image is empty.');
+  }
+  if (arrayBuffer.byteLength > MAX_UPLOAD_BYTES) {
+    throw new Error('Image is too large. Pick something under 8 MB.');
+  }
+
+  const fallbackExt = args.uri.split('.').pop()?.toLowerCase() || 'jpg';
+  const { contentType, extension } = inferContentType(args.uri, fallbackExt);
+  const path = `${args.userId}/${createId('image')}.${extension}`;
 
   const { error } = await supabase.storage.from(args.bucket).upload(path, arrayBuffer, {
-    contentType: extension === 'png' ? 'image/png' : 'image/jpeg',
-    upsert: false
+    contentType,
+    upsert: false,
+    cacheControl: '3600'
   });
 
   if (error) {
