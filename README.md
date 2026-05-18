@@ -71,7 +71,6 @@ PocketNet is in **public beta**. This is an honest snapshot for anyone downloadi
 
 ### Known limitations / not working yet
 
-- **Email confirmation links don't open a real web page.** The Supabase **Site URL** is set to a custom deep-link scheme (`pocketnet://confirmed`) because PocketNet has no domain yet. On Android with PocketNet installed, the link opens the app; on desktop browsers it just shows "page can't be loaded" — but the account is still marked confirmed by Supabase the moment the link is clicked. **This will be fixed once PocketNet has a real domain** (a one-page landing site + redirect handler).
 - Built-in Supabase mailer is rate-limited (~2 emails/hour, ~30/day). Fine for a small beta; custom SMTP comes later.
 - Theme + layout changes take full effect **on the next app launch** (React Native `StyleSheet` snapshots values at module load).
 - Push notifications are not implemented. In-app notifications only.

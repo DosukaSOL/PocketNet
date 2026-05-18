@@ -4,7 +4,7 @@
 
 - **Fix (Android build):** pinned `react-native-worklets` to `0.7.4` so it stays compatible with `react-native-reanimated@4.2.1`. The transitive `0.8.3` was failing the EAS Gradle build with `[Reanimated] Your installed version of Worklets (0.8.3) is not compatible with installed version of Reanimated (4.2.1)`.
 - Added a **Beta Status** section to the README spelling out what works today and what doesn't.
-- **Known limitation (tracked, to fix later):** Supabase auth email-confirmation links currently point at the deep-link scheme `pocketnet://confirmed` because PocketNet has no real web domain yet. On Android with the app installed, links open the app; on desktop they don't load a page, though Supabase still marks the account confirmed on click. Will be replaced with a proper landing page once a domain is registered.
+- **Email confirmation landing page:** added a branded "Email confirmed" page at `docs/index.html`, hosted free via GitHub Pages at `https://dosukasol.github.io/PocketNet/`. Supabase Site URL points there, so desktop browsers now see a real confirmation page instead of a broken deep-link, while Android still bounces into the app via the "Open PocketNet" button (which preserves any PKCE token in the URL hash).
 
 ## 0.1.2 - Themes, Layout Modes, Username Login
 
