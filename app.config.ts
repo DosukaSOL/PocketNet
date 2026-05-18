@@ -35,6 +35,11 @@ export default {
     plugins: ['expo-router', 'expo-image-picker', 'expo-audio'],
     experiments: {
       typedRoutes: true
+    },
+    extra: {
+      eas: {
+        projectId: '4165f4e0-21bd-4579-b6ee-0b2ea95cdaa0'
+      }
     }
   }
 };
