@@ -107,7 +107,7 @@ export function ProfileHeader({
               label={profile.displayName}
               uri={profile.avatarUrl}
               size={96}
-              status={isOnline(profile.lastSeenAt) ? 'online' : 'offline'}
+              status={isCurrentUser || isOnline(profile.lastSeenAt) ? 'online' : 'offline'}
               focus={dualScreen}
             />
           </View>

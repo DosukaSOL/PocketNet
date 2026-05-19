@@ -1,23 +1,22 @@
-// In-app GIF search. Tries Tenor v2 first when EXPO_PUBLIC_TENOR_KEY is
-// configured, otherwise falls back to Giphy's public Beta API key which is
-// rate-limited but keyless — meaning users always get an in-app GIF picker
-// instead of having to paste URLs.
+// In-app GIF search powered by Tenor's legacy v1 endpoint at api.tenor.com,
+// which still accepts the long-published anonymous key "LIVDSRZULELA". Tenor's
+// newer v2 endpoint on tenor.googleapis.com requires a per-project key — the
+// v1 host is the only fully keyless option that still works today (verified
+// against api.tenor.com on 2026-05-19). We use it as the default so users
+// never need to paste a URL.
 //
-// The Giphy beta key has been published in Giphy's own developer docs for
-// years. It is intended for prototyping and small-scale use. We pass a
-// strict rating ("pg-13") so we don't surface explicit content by default.
+// If a project sets EXPO_PUBLIC_TENOR_KEY we prefer Tenor v2 (more reliable,
+// no rate ceiling), but every install ships with v1 working out of the box.
 
-const TENOR_ENDPOINT = 'https://tenor.googleapis.com/v2/search';
-const TENOR_TRENDING = 'https://tenor.googleapis.com/v2/featured';
-const GIPHY_ENDPOINT = 'https://api.giphy.com/v1/gifs/search';
-const GIPHY_TRENDING = 'https://api.giphy.com/v1/gifs/trending';
-const GIPHY_PUBLIC_KEY = 'dc6zaTOxFJmzC';
+const TENOR_V2_SEARCH = 'https://tenor.googleapis.com/v2/search';
+const TENOR_V2_FEATURED = 'https://tenor.googleapis.com/v2/featured';
+const TENOR_V1_SEARCH = 'https://api.tenor.com/v1/search';
+const TENOR_V1_TRENDING = 'https://api.tenor.com/v1/trending';
+const TENOR_V1_ANON_KEY = 'LIVDSRZULELA';
 
 export type TenorGif = {
   id: string;
-  /** Direct image URL suitable for embedding. */
   url: string;
-  /** Smaller preview for grid display. */
   previewUrl: string;
   width: number;
   height: number;
@@ -30,18 +29,17 @@ function readTenorKey(): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-/** Always true now that there is a keyless Giphy fallback. */
 export function isTenorEnabled(): boolean {
   return true;
 }
 
-type TenorMediaFormat = { url: string; dims?: [number, number] };
-type TenorResponseItem = { id: string; media_formats?: Record<string, TenorMediaFormat> };
-type TenorResponse = { results?: TenorResponseItem[] };
+type TenorV2MediaFormat = { url: string; dims?: [number, number] };
+type TenorV2Item = { id: string; media_formats?: Record<string, TenorV2MediaFormat> };
+type TenorV2Response = { results?: TenorV2Item[] };
 
-async function searchTenor(query: string, limit: number, key: string): Promise<TenorGif[]> {
+async function searchTenorV2(query: string, limit: number, key: string): Promise<TenorGif[]> {
   const isTrending = !query.trim();
-  const base = isTrending ? TENOR_TRENDING : TENOR_ENDPOINT;
+  const base = isTrending ? TENOR_V2_FEATURED : TENOR_V2_SEARCH;
   const params = new URLSearchParams({
     key,
     limit: String(limit),
@@ -58,7 +56,7 @@ async function searchTenor(query: string, limit: number, key: string): Promise<T
   }
   if (!res.ok) return [];
 
-  const data = (await res.json()) as TenorResponse;
+  const data = (await res.json()) as TenorV2Response;
   const items = data.results ?? [];
   return items
     .map((item) => {
@@ -76,26 +74,24 @@ async function searchTenor(query: string, limit: number, key: string): Promise<T
     .filter((g): g is TenorGif => g !== null);
 }
 
-type GiphyImage = { url?: string; width?: string | number; height?: string | number };
-type GiphyItem = {
-  id: string;
-  images?: {
-    original?: GiphyImage;
-    downsized_medium?: GiphyImage;
-    fixed_width?: GiphyImage;
-    fixed_width_small?: GiphyImage;
-  };
+type TenorV1MediaEntry = { url?: string; dims?: [number, number] };
+type TenorV1MediaItem = {
+  gif?: TenorV1MediaEntry;
+  mediumgif?: TenorV1MediaEntry;
+  tinygif?: TenorV1MediaEntry;
+  nanogif?: TenorV1MediaEntry;
 };
-type GiphyResponse = { data?: GiphyItem[] };
+type TenorV1Item = { id: string; media?: TenorV1MediaItem[] };
+type TenorV1Response = { results?: TenorV1Item[] };
 
-async function searchGiphy(query: string, limit: number): Promise<TenorGif[]> {
+async function searchTenorV1(query: string, limit: number): Promise<TenorGif[]> {
   const isTrending = !query.trim();
-  const base = isTrending ? GIPHY_TRENDING : GIPHY_ENDPOINT;
+  const base = isTrending ? TENOR_V1_TRENDING : TENOR_V1_SEARCH;
   const params = new URLSearchParams({
-    api_key: GIPHY_PUBLIC_KEY,
+    key: TENOR_V1_ANON_KEY,
     limit: String(limit),
-    rating: 'pg-13',
-    bundle: 'messaging_non_clips'
+    media_filter: 'minimal',
+    contentfilter: 'high'
   });
   if (!isTrending) params.set('q', query.trim());
 
@@ -107,19 +103,20 @@ async function searchGiphy(query: string, limit: number): Promise<TenorGif[]> {
   }
   if (!res.ok) return [];
 
-  const data = (await res.json()) as GiphyResponse;
-  const items = data.data ?? [];
+  const data = (await res.json()) as TenorV1Response;
+  const items = data.results ?? [];
   return items
     .map((item) => {
-      const original = item.images?.downsized_medium ?? item.images?.original;
-      const tiny = item.images?.fixed_width_small ?? item.images?.fixed_width ?? original;
-      if (!original?.url) return null;
+      const media = item.media?.[0];
+      const gif = media?.mediumgif ?? media?.gif;
+      const tiny = media?.tinygif ?? media?.nanogif ?? gif;
+      if (!gif?.url) return null;
       return {
         id: String(item.id),
-        url: original.url,
-        previewUrl: tiny?.url ?? original.url,
-        width: Number(original.width ?? 320),
-        height: Number(original.height ?? 240)
+        url: gif.url,
+        previewUrl: tiny?.url ?? gif.url,
+        width: gif.dims?.[0] ?? 320,
+        height: gif.dims?.[1] ?? 240
       } satisfies TenorGif;
     })
     .filter((g): g is TenorGif => g !== null);
@@ -128,8 +125,8 @@ async function searchGiphy(query: string, limit: number): Promise<TenorGif[]> {
 export async function searchGifs(query: string, limit = 24): Promise<TenorGif[]> {
   const tenorKey = readTenorKey();
   if (tenorKey) {
-    const tenor = await searchTenor(query, limit, tenorKey);
-    if (tenor.length > 0) return tenor;
+    const v2 = await searchTenorV2(query, limit, tenorKey);
+    if (v2.length > 0) return v2;
   }
-  return searchGiphy(query, limit);
+  return searchTenorV1(query, limit);
 }

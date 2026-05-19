@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Flag, Heart, ImagePlus, MessageCircle, MoreHorizontal, Pin, Send, Trash2, X } from 'lucide-react-native';
+import { Camera, Flag, Heart, ImagePlus, MessageCircle, MoreHorizontal, Pin, Send, Trash2, X } from 'lucide-react-native';
 import { useMemo, useRef, useState } from 'react';
 import { Alert, Animated, Pressable, StyleSheet, View } from 'react-native';
 
@@ -12,6 +12,7 @@ import { colors, radius, shadows, spacing } from '@/design/tokens';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
 import { isDualScreenDevice } from '@/lib/devices';
+import { pickImage, uploadImage } from '@/lib/media';
 import { canDeleteCommunityPost } from '@/lib/moderation';
 import type { Post } from '@/types/domain';
 
@@ -21,6 +22,7 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
   const [comment, setComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<{ commentId: string; username: string } | null>(null);
   const [gifVisible, setGifVisible] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const likeScale = useRef(new Animated.Value(1)).current;
   const author = getProfile(post.authorId);
   const community = getCommunity(post.communityId);
@@ -55,6 +57,23 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
     await addComment(post.id, comment, replyingTo?.commentId);
     setComment('');
     setReplyingTo(null);
+  }
+
+  async function handleAddPhoto() {
+    if (!profile?.id) return;
+    if (uploadingPhoto) return;
+    try {
+      const image = await pickImage();
+      if (!image) return;
+      setUploadingPhoto(true);
+      const url = await uploadImage({ bucket: 'post-images', userId: profile.id, uri: image.uri });
+      setComment((current) => (current.trim() ? `${current.trim()} ${url}` : url));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not attach photo.';
+      Alert.alert('Photo upload failed', message);
+    } finally {
+      setUploadingPhoto(false);
+    }
   }
 
   function handleReplyTo(commentId: string, username: string) {
@@ -208,6 +227,7 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
                 onSubmitEditing={() => void handleAddComment()}
               />
             </View>
+            <IconButton icon={Camera} label="Add photo" onPress={() => void handleAddPhoto()} />
             <IconButton icon={ImagePlus} label="Add GIF" onPress={() => setGifVisible(true)} />
             <Button label="Send" compact icon={Send} variant="secondary" onPress={() => void handleAddComment()} />
           </Row>

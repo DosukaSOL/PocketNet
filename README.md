@@ -46,7 +46,18 @@ PocketNet is standalone and is not affiliated with AYN, Cocoon, Daijisho, ES-DE,
 
 ## Beta Status — What Works & What Doesn't
 
-PocketNet **v1.3.4** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+PocketNet **v1.3.5** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+
+### What's new in v1.3.5
+
+- **GIF search works again.** Giphy's public Beta API key now returns `403 BANNED` for everyone, which broke in-app GIF search. The keyless fallback now uses **Tenor v1** with the documented anonymous web key — search returns real GIFs without any setup.
+- **Real platform icons on profile social links.** GitHub, YouTube, Twitch, X (inline SVG), Discord (inline SVG), and a globe for personal websites. Two display modes per field:
+  - **Link mode** — value starts with `http(s)://`: just the icon, clickable, opens the full URL.
+  - **Handle mode** — anything else: icon + `@handle` next to it. For platforms with a known URL shape (X, Twitch, YouTube, GitHub) the icon is still clickable and resolves to the canonical profile URL.
+- **Photos in comments.** New camera button in every comment composer opens the system image picker, uploads to the `post-images` bucket, and inserts the URL. `CommentCard` now renders `jpg/jpeg/png/gif/webp` inline.
+- **First-run tour reliably appears.** `markTourPending()` now also emits a `DeviceEventEmitter` event so an already-mounted `AppTour` flips into the prompt phase right after sign-up, instead of waiting for the next remount.
+- **Self online bubble stays green.** The presence heartbeat now optimistically refreshes the local `profile.lastSeenAt` so your own avatar is green immediately. `ProfileHeader` also treats `isCurrentUser` as always-online, and the status composer hardcodes online for the self avatar.
+- **Bigger home logo.** The home hero logo is now twice its old size and dropped the square shell around it — just the mark.
 
 ### What's new in v1.3.4
 

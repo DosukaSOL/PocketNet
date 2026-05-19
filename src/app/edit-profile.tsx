@@ -349,12 +349,15 @@ export default function EditProfileScreen() {
           <LinkIcon color={colors.accentPurple} size={20} />
           <AppText variant="sectionTitle">Social Links</AppText>
         </Row>
-        <TextField label="X / Twitter" value={twitter} onChangeText={setTwitter} autoCapitalize="none" />
-        <TextField label="Discord" value={discord} onChangeText={setDiscord} autoCapitalize="none" />
-        <TextField label="Twitch" value={twitch} onChangeText={setTwitch} autoCapitalize="none" />
-        <TextField label="YouTube" value={youtube} onChangeText={setYoutube} autoCapitalize="none" />
-        <TextField label="GitHub" value={github} onChangeText={setGithub} autoCapitalize="none" />
-        <TextField label="Website" value={website} onChangeText={setWebsite} autoCapitalize="none" />
+        <AppText variant="metadata" color={colors.textSecondary}>
+          Paste a full link (https://…) to make the icon clickable, or just your handle to show it next to the icon.
+        </AppText>
+        <TextField label="X / Twitter" value={twitter} onChangeText={setTwitter} autoCapitalize="none" placeholder="@handle or https://x.com/handle" />
+        <TextField label="Discord" value={discord} onChangeText={setDiscord} autoCapitalize="none" placeholder="username#0000 or full link" />
+        <TextField label="Twitch" value={twitch} onChangeText={setTwitch} autoCapitalize="none" placeholder="handle or https://twitch.tv/handle" />
+        <TextField label="YouTube" value={youtube} onChangeText={setYoutube} autoCapitalize="none" placeholder="@handle or https://youtube.com/@handle" />
+        <TextField label="GitHub" value={github} onChangeText={setGithub} autoCapitalize="none" placeholder="username or https://github.com/username" />
+        <TextField label="Website" value={website} onChangeText={setWebsite} autoCapitalize="none" placeholder="https://yoursite.com" />
       </Card>
 
       <Button label="Save profile" icon={Save} loading={saving} onPress={() => void save()} />

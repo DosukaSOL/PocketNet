@@ -5,7 +5,6 @@ import { ImagePreview } from '@/components/ui/ImagePreview';
 import { AppText, Avatar, Button, GlowCard, Row, Stack, TextArea } from '@/components/ui';
 import { colors } from '@/design/tokens';
 import { isDualScreenDevice } from '@/lib/devices';
-import { isOnline } from '@/lib/presence';
 import type { Profile } from '@/types/domain';
 
 export function StatusComposer({
@@ -41,7 +40,7 @@ export function StatusComposer({
     <GlowCard tone={dualScreen ? 'focus' : 'cyan'}>
       <Row style={styles.header}>
         {profile ? (
-          <Avatar label={profile.displayName} uri={profile.avatarUrl} status={isOnline(profile.lastSeenAt) ? 'online' : 'offline'} focus={dualScreen} />
+          <Avatar label={profile.displayName} uri={profile.avatarUrl} status="online" focus={dualScreen} />
         ) : null}
         <Stack gap={2} style={styles.headerCopy}>
           <AppText variant="sectionTitle">{title}</AppText>

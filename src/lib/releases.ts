@@ -14,6 +14,20 @@ export type ReleaseEntry = {
 
 export const RELEASES: ReleaseEntry[] = [
   {
+    version: '1.3.5',
+    date: '2026-05-23',
+    title: 'Working GIFs, real social icons, photo replies, presence + tour fixes',
+    highlights: [
+      'GIF search works again \u2014 switched the keyless fallback to Tenor v1 (Giphy revoked their public key)',
+      'Profile social links now show real platform icons (GitHub, YouTube, Twitch, X, Discord, globe for websites)',
+      'Save a full link to make the icon clickable, or just a handle to show it next to the icon',
+      'Attach a photo from your device in any comment \u2014 not just GIFs',
+      'First-run tour reliably appears for fresh sign-ups (event bus + mount-time check)',
+      'Your own online dot stays green while the app is open (local presence cache stays fresh)',
+      'Bigger home logo \u2014 the hero mark doubled in size with no square box around it'
+    ]
+  },
+  {
     version: '1.3.4',
     date: '2026-05-22',
     title: 'Bigger banner, border motion options, keyless GIFs, first-run tour',

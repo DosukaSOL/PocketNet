@@ -299,6 +299,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const ping = () => {
       try {
         void Promise.resolve(supabase!.rpc('touch_last_seen')).catch(() => undefined);
+        // Optimistically refresh local profile.lastSeenAt so the current
+        // user's own avatar bubble shows green immediately — without this the
+        // local cache stays stale and the user sees a grey dot on their own
+        // profile even though the server side is up to date.
+        const now = new Date().toISOString();
+        setProfile((current) => (current ? { ...current, lastSeenAt: now } : current));
       } catch {
         // Swallow — presence is best-effort.
       }

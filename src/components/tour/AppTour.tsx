@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { DeviceEventEmitter, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText, Button, GlowCard, Row, Stack } from '@/components/ui';
 import { colors, gradients, radius, shadows, spacing } from '@/design/tokens';
@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 export const TOUR_PENDING_KEY = 'pocketnet:tour-pending';
 export const TOUR_DONE_KEY = 'pocketnet:tour-done';
+const TOUR_EVENT = 'pocketnet:tour-pending-set';
 
 const MASCOT = require('@/assets/images/pocket-foxy-tour.png');
 
@@ -53,6 +54,15 @@ export async function markTourPending(): Promise<void> {
   } catch {
     // best-effort
   }
+  // Notify any already-mounted AppTour instance so it can flip into the prompt
+  // phase without needing a remount. Without this, AppTour's mount-time
+  // AsyncStorage read would have already returned null and the tour would
+  // never appear for fresh sign-ups.
+  try {
+    DeviceEventEmitter.emit(TOUR_EVENT);
+  } catch {
+    // best-effort
+  }
 }
 
 async function clearTourPending(): Promise<void> {
@@ -75,8 +85,15 @@ export function AppTour({ onFinish }: { onFinish?: () => void }) {
         if (!cancelled && value === '1') setPhase('prompt');
       })
       .catch(() => undefined);
+    const sub = DeviceEventEmitter.addListener(TOUR_EVENT, () => {
+      if (!cancelled) {
+        setStepIndex(0);
+        setPhase('prompt');
+      }
+    });
     return () => {
       cancelled = true;
+      sub.remove();
     };
   }, []);
 

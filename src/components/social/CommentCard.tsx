@@ -7,14 +7,14 @@ import { AppText, Avatar } from '@/components/ui';
 import { colors, radius, spacing } from '@/design/tokens';
 import type { Comment } from '@/types/domain';
 
-const GIF_RE = /(https:\/\/[A-Za-z0-9.\-/_%?=&:#~+]+?\.(?:gif|webp))(?:\?[A-Za-z0-9.\-/_%?=&:#~+]*)?/i;
+const MEDIA_RE = /(https:\/\/[A-Za-z0-9.\-/_%?=&:#~+]+?\.(?:gif|webp|jpe?g|png))(?:\?[A-Za-z0-9.\-/_%?=&:#~+]*)?/i;
 
-function extractGif(body: string): { text: string; gifUrl?: string } {
-  const match = body.match(GIF_RE);
+function extractMedia(body: string): { text: string; mediaUrl?: string } {
+  const match = body.match(MEDIA_RE);
   if (!match) return { text: body };
-  const gifUrl = match[0];
-  const text = body.replace(gifUrl, '').trim();
-  return { text, gifUrl };
+  const mediaUrl = match[0];
+  const text = body.replace(mediaUrl, '').trim();
+  return { text, mediaUrl };
 }
 
 export function CommentCard({
@@ -37,7 +37,7 @@ export function CommentCard({
   canDelete?: boolean;
 }) {
   const isReply = Boolean(comment.parentCommentId);
-  const { text, gifUrl } = extractGif(comment.body);
+  const { text, mediaUrl } = extractMedia(comment.body);
 
   function openAuthor() {
     if (!comment.authorId) return;
@@ -87,10 +87,10 @@ export function CommentCard({
           </View>
         ) : null}
       </View>
-      <AppText variant="caption">{text || (gifUrl ? '' : comment.body)}</AppText>
-      {gifUrl ? (
+      <AppText variant="caption">{text || (mediaUrl ? '' : comment.body)}</AppText>
+      {mediaUrl ? (
         <Image
-          source={{ uri: gifUrl }}
+          source={{ uri: mediaUrl }}
           style={styles.gif}
           contentFit="cover"
           cachePolicy="memory-disk"

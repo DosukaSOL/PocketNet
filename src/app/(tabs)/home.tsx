@@ -1,10 +1,10 @@
 import { router, useFocusEffect } from 'expo-router';
+import { Image } from 'expo-image';
 import { Bell, Compass, UserX } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { PostCard } from '@/components/PostCard';
-import { BrandMark } from '@/components/BrandMark';
 import { UserCard } from '@/components/social/UserCard';
 import {
   AppText,
@@ -70,7 +70,12 @@ export default function HomeScreen() {
         </View>
       </Row>
       <Stack gap={spacing.sm} style={styles.heroBlock}>
-        <BrandMark size={132} />
+        <Image
+          source={require('@/assets/images/pocketnet-logo.png')}
+          style={styles.heroLogo}
+          contentFit="contain"
+          accessibilityIgnoresInvertColors
+        />
         <AppText variant="display" style={styles.wordmark}>
           PocketNet
         </AppText>
@@ -176,6 +181,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: spacing.md,
     paddingBottom: spacing.xs
+  },
+  heroLogo: {
+    width: 264,
+    height: 264
   },
   wordmark: {
     color: colors.textPrimary,

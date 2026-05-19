@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.3.5 - Working GIFs, real social icons, photo replies, presence + tour fixes
+
+Bug-fix + polish pack. v1.3.5 finally **fixes the broken GIF search** (Tenor v1 anonymous key — Giphy's public Beta key was revoked), brings **real platform logos** to social links with two display modes (full URL → clickable icon-only; bare handle → icon + `@handle` next to it), lets you **attach a photo from your device in any comment**, makes the **first-run tour actually appear** for fresh sign-ups, keeps **your own online dot reliably green** while you're using the app, and **enlarges the home logo** (no more square box around it).
+
+### Fixes
+
+- **GIF search works again.** Giphy's public Beta key now returns `403 BANNED` for everyone, which broke in-app GIF search. Swapped the keyless fallback to **Tenor v1** with the documented anonymous web key. Result: search returns real GIFs without any setup.
+- **First-run tour reliably shows.** `markTourPending()` now also emits a `DeviceEventEmitter` signal, so an already-mounted `AppTour` flips into the prompt phase right after sign-up instead of waiting for the next remount.
+- **Self online bubble stays green.** Heartbeat now optimistically refreshes the local `profile.lastSeenAt` so your own avatar is green immediately. `ProfileHeader` also treats `isCurrentUser` as always-online, and the status composer hardcodes online for the self avatar.
+
+### New features
+
+- **Photos in comments.** A new camera button in the reply composer opens the system image picker, uploads to the `post-images` bucket, and inserts the public URL into the comment. `CommentCard` now renders `jpg/jpeg/png/gif/webp` inline.
+- **Real platform icons on profile social links.** GitHub, YouTube, Twitch, Instagram-style X (custom SVG), Discord (custom SVG), and a globe for personal websites. Two display modes:
+  - **Link mode** (value starts with `http(s)://`): just the clickable icon, opens the URL in the system browser.
+  - **Handle mode** (anything else): icon + `@handle` next to it; for the platforms that support it (X, Twitch, YouTube, GitHub) the icon is still clickable and resolves to the canonical profile URL.
+- **Bigger home logo.** The home screen's hero logo doubles in size and drops the square shell — just the mark, larger and cleaner.
+
 ## 1.3.4 - Bigger banner, border motion options, keyless GIFs, first-run tour
 
 Polish + UX pack. v1.3.4 makes profile banners bigger and lifts your display name, @handle, and level chip out of the banner area into a clean row below it. Animated borders no longer always rotate — pick **Rotate / Pulse / Breathe / Shimmer / Static** motion per preset. New static border presets (**Mono, Ocean, Rose, Forest, Slate, Neon, Flames**) widen the choice when you don't want animation. Profile card export now toggles between **JPEG (still)** and **GIF (animated)** so animated borders show motion in the export. In-app GIF search now works out of the box with **no API key required** (keyless Giphy fallback). **Comments now render the author's profile picture** and tapping any commenter opens their profile. The **online dot** is finally live — green while in the app, grey when you leave. A friendly **first-run tour** with Pocket Foxy explains the core surfaces in ~30 seconds and is skippable. The **Developer** badge now uses a technologist emoji instead of a wolf.
