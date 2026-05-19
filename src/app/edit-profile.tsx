@@ -1,18 +1,18 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { ArrowLeft, ImagePlus, Link as LinkIcon, Save, Sparkles, Wand2 } from 'lucide-react-native';
-import { useState } from 'react';
+import { ArrowLeft, ImagePlus, Link as LinkIcon, Save, Sparkles, Upload, Wand2 } from 'lucide-react-native';
+import { useMemo, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
 import { ChipPicker } from '@/components/ChipPicker';
+import { ProfileHeader } from '@/components/ProfileHeader';
+import { ANIMATED_BORDERS, STATIC_BORDERS } from '@/components/social/AnimatedCardBorder';
 import { DeviceProfileCard, DeviceSelect } from '@/components/social/DeviceProfileCard';
 import { AppText, Badge, Button, Card, Row, Screen, Stack, TextArea, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { FRONTENDS, REGIONS, SAMPLE_GAMES, SYSTEMS } from '@/lib/catalog';
 import { pickGif, pickImage, uploadImage } from '@/lib/media';
 import { colors, radius, spacing } from '@/design/tokens';
-
-const BORDER_PRESETS = ['classic', 'neon', 'sunset', 'aurora', 'gold', 'retro', 'plasma'];
 
 export default function EditProfileScreen() {
   const { profile, patchProfile } = useAuth();
@@ -54,7 +54,7 @@ export default function EditProfileScreen() {
   const activeProfile = profile;
 
   async function chooseAvatar() {
-    const image = await pickImage();
+    const image = await pickImage({ aspect: [1, 1] });
     if (image) {
       setAvatarUri(image.uri);
     }
@@ -70,7 +70,7 @@ export default function EditProfileScreen() {
   }
 
   async function chooseBanner() {
-    const image = await pickImage();
+    const image = await pickImage({ aspect: [3, 1] });
     if (image) {
       setBannerUri(image.uri);
     }
@@ -82,6 +82,21 @@ export default function EditProfileScreen() {
       if (image) setBannerUri(image.uri);
     } catch (error) {
       Alert.alert('Could not pick GIF', error instanceof Error ? error.message : 'Try again.');
+    }
+  }
+
+  async function uploadBorderGif() {
+    try {
+      const gif = await pickGif();
+      if (!gif) return;
+      const url = await uploadImage({
+        bucket: 'border-images',
+        userId: activeProfile.id,
+        uri: gif.uri
+      });
+      setCustomBorderUrl(url);
+    } catch (error) {
+      Alert.alert('Could not upload border GIF', error instanceof Error ? error.message : 'Try again.');
     }
   }
 
@@ -150,6 +165,17 @@ export default function EditProfileScreen() {
           Make the public version of your handheld setup feel useful, personal, and screenshot-worthy.
         </AppText>
       </Stack>
+
+      <PreviewBlock
+        profile={activeProfile}
+        displayName={displayName}
+        username={username}
+        bio={bio}
+        avatarUri={avatarUri}
+        bannerUri={bannerUri}
+        cardBorder={cardBorder}
+        customBorderUrl={customBorderUrl}
+      />
 
       <Card elevated>
         <View style={styles.previewBanner}>
@@ -245,15 +271,43 @@ export default function EditProfileScreen() {
       <Card>
         <AppText variant="sectionTitle">Profile Border</AppText>
         <AppText variant="caption" color={colors.textSecondary}>
-          Pick a preset, or paste a direct image URL (https) for a fully custom border or animated frame.
+          Pick a static look, an animated preset, or upload your own GIF border.
         </AppText>
+
+        <AppText variant="metadata" color={colors.textMuted}>Static</AppText>
         <ChipPicker
-          options={BORDER_PRESETS}
-          value={cardBorder}
-          onChange={(value) => setCardBorder(String(value))}
+          options={STATIC_BORDERS as unknown as string[]}
+          value={STATIC_BORDERS.includes(cardBorder as never) ? cardBorder : ''}
+          onChange={(value) => {
+            setCardBorder(String(value));
+            setCustomBorderUrl('');
+          }}
         />
+
+        <AppText variant="metadata" color={colors.textMuted}>Animated</AppText>
+        <ChipPicker
+          options={ANIMATED_BORDERS as unknown as string[]}
+          value={ANIMATED_BORDERS.includes(cardBorder as never) ? cardBorder : ''}
+          onChange={(value) => {
+            setCardBorder(String(value));
+            setCustomBorderUrl('');
+          }}
+        />
+
+        <AppText variant="sectionTitle">Custom GIF border</AppText>
+        <AppText variant="caption" color={colors.textSecondary}>
+          Recommended: 600 × 600 square GIF, under 4 MB. The frame is rotated
+          around your card so a seamless tileable pattern looks best. Animated
+          GIF / PNG / JPG / WEBP. HTTPS only.
+        </AppText>
+        <Row style={{ flexWrap: 'wrap' }}>
+          <Button label="Upload GIF border" icon={Upload} variant="secondary" onPress={() => void uploadBorderGif()} />
+          {customBorderUrl ? (
+            <Button label="Clear" variant="ghost" onPress={() => setCustomBorderUrl('')} />
+          ) : null}
+        </Row>
         <TextField
-          label="Custom border image URL"
+          label="Or paste an image URL"
           value={customBorderUrl}
           onChangeText={setCustomBorderUrl}
           placeholder="https://your-cdn.com/border.gif"
@@ -261,7 +315,7 @@ export default function EditProfileScreen() {
           autoCorrect={false}
         />
         <AppText variant="metadata" color={colors.textMuted}>
-          Animated GIF or static PNG/JPG/WEBP. HTTPS only. Keep it tasteful — PocketNet may remove
+          Custom borders override the preset. Keep it tasteful — PocketNet may remove
           borders that violate the community guidelines.
         </AppText>
       </Card>
@@ -289,6 +343,52 @@ export default function EditProfileScreen() {
       <Button label="Save profile" icon={Save} loading={saving} onPress={() => void save()} />
       <Button label="Cancel" variant="ghost" onPress={() => router.back()} />
     </Screen>
+  );
+}
+
+function PreviewBlock({
+  profile,
+  displayName,
+  username,
+  bio,
+  avatarUri,
+  bannerUri,
+  cardBorder,
+  customBorderUrl
+}: {
+  profile: import('@/types/domain').Profile;
+  displayName: string;
+  username: string;
+  bio: string;
+  avatarUri?: string;
+  bannerUri?: string;
+  cardBorder: string;
+  customBorderUrl?: string;
+}) {
+  const draft = useMemo(
+    () => ({
+      ...profile,
+      displayName: displayName || profile.displayName,
+      username: username || profile.username,
+      bio,
+      avatarUrl: avatarUri ?? profile.avatarUrl,
+      bannerUrl: bannerUri ?? profile.bannerUrl,
+      cardBorder,
+      customBorderUrl: customBorderUrl || undefined
+    }),
+    [profile, displayName, username, bio, avatarUri, bannerUri, cardBorder, customBorderUrl]
+  );
+  return (
+    <Card>
+      <Row style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <AppText variant="sectionTitle">Live preview</AppText>
+        <Badge label="Unsaved" tone="warning" compact />
+      </Row>
+      <AppText variant="caption" color={colors.textSecondary}>
+        This is how your profile will look right after you tap Save.
+      </AppText>
+      <ProfileHeader profile={draft} isCurrentUser activeTab="posts" />
+    </Card>
   );
 }
 

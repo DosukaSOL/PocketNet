@@ -77,6 +77,7 @@ type SocialContextValue = {
   searchCommunities: (query: string) => Community[];
   createPost: (input: CreatePostInput) => Promise<void>;
   deletePost: (postId: ID) => Promise<void>;
+  deleteComment: (postId: ID, commentId: ID) => Promise<void>;
   toggleLike: (postId: ID) => Promise<void>;
   addComment: (postId: ID, body: string, parentCommentId?: ID) => Promise<void>;
   sendFriendRequest: (toUserId: ID) => Promise<void>;
@@ -89,6 +90,9 @@ type SocialContextValue = {
   joinCommunity: (communityId: ID) => Promise<void>;
   leaveCommunity: (communityId: ID) => Promise<void>;
   pinPost: (communityId: ID, postId: ID) => Promise<void>;
+  unpinPost: (communityId: ID) => Promise<void>;
+  updateCommunity: (communityId: ID, input: import('@/types/domain').UpdateCommunityInput) => Promise<void>;
+  setCommunityNotify: (communityId: ID, enabled: boolean) => Promise<void>;
   setCommunityModerator: (communityId: ID, userId: ID, isModerator: boolean) => Promise<void>;
   banCommunityMember: (communityId: ID, userId: ID) => Promise<void>;
   markNotificationsRead: () => Promise<void>;
@@ -180,7 +184,7 @@ export function SocialProvider({ children }: PropsWithChildren) {
       }
 
       if (communitiesResult.data) {
-        setCommunities(communitiesResult.data.map(communityFromRow));
+        setCommunities(communitiesResult.data.map((row) => communityFromRow(row, session.user.id)));
       }
 
       if (friendshipsResult.data) {
@@ -880,6 +884,9 @@ export function SocialProvider({ children }: PropsWithChildren) {
         name: input.name.trim(),
         description: input.description.trim(),
         bannerUrl,
+        socialLinks: {},
+        cardBorder: 'classic',
+        notifyOnPost: false,
         creatorId: currentUserId,
         memberIds: [currentUserId],
         roles: { [currentUserId]: 'creator' },
@@ -997,10 +1004,138 @@ export function SocialProvider({ children }: PropsWithChildren) {
       );
 
       if (supabase && session?.user) {
-        await supabase.from('communities').update({ pinned_post_id: postId }).eq('id', communityId);
+        const { error } = await supabase.rpc('pin_community_post', {
+          p_community_id: communityId,
+          p_post_id: postId
+        });
+        if (error) throw error;
       }
     },
     [currentUserId, getCommunity, session]
+  );
+
+  const unpinPost = useCallback(
+    async (communityId: ID) => {
+      const community = getCommunity(communityId);
+      if (!community || !canModerateCommunity(community, currentUserId)) {
+        throw new Error('Only community creators or moderators can unpin posts.');
+      }
+
+      setCommunities((items) =>
+        items.map((item) => (item.id === communityId ? { ...item, pinnedPostId: undefined } : item))
+      );
+      setPosts((items) =>
+        items.map((post) =>
+          post.communityId === communityId ? { ...post, isPinned: false } : post
+        )
+      );
+
+      if (supabase && session?.user) {
+        const { error } = await supabase.rpc('pin_community_post', {
+          p_community_id: communityId,
+          p_post_id: null
+        });
+        if (error) throw error;
+      }
+    },
+    [currentUserId, getCommunity, session]
+  );
+
+  const updateCommunity = useCallback(
+    async (communityId: ID, input: import('@/types/domain').UpdateCommunityInput) => {
+      const community = getCommunity(communityId);
+      if (!community) throw new Error('Community not found.');
+      if (community.creatorId !== currentUserId) {
+        throw new Error('Only the community creator can edit this community.');
+      }
+
+      let avatarUrl: string | undefined = input.avatarUrl;
+      if (input.avatarUri) {
+        avatarUrl = await uploadImage({
+          bucket: 'community-avatars',
+          userId: currentUserId,
+          uri: input.avatarUri
+        });
+      }
+      let bannerUrl: string | undefined = input.bannerUrl;
+      if (input.bannerUri) {
+        bannerUrl = await uploadImage({
+          bucket: 'community-banners',
+          userId: currentUserId,
+          uri: input.bannerUri
+        });
+      }
+
+      const patch: Partial<Community> = {};
+      if (input.name !== undefined) patch.name = input.name;
+      if (input.description !== undefined) patch.description = input.description;
+      if (input.bio !== undefined) patch.bio = input.bio;
+      if (input.cardBorder !== undefined) patch.cardBorder = input.cardBorder;
+      if (input.customBorderUrl !== undefined) patch.customBorderUrl = input.customBorderUrl || undefined;
+      if (input.socialLinks !== undefined) patch.socialLinks = input.socialLinks;
+      if (avatarUrl !== undefined) patch.avatarUrl = avatarUrl || undefined;
+      if (bannerUrl !== undefined) patch.bannerUrl = bannerUrl || undefined;
+
+      setCommunities((items) =>
+        items.map((item) => (item.id === communityId ? { ...item, ...patch } : item))
+      );
+
+      if (supabase && session?.user) {
+        const { error } = await supabase.rpc('update_community', {
+          p_community_id: communityId,
+          p_name: input.name ?? null,
+          p_description: input.description ?? null,
+          p_bio: input.bio ?? null,
+          p_avatar_url: avatarUrl ?? null,
+          p_banner_url: bannerUrl ?? null,
+          p_card_border: input.cardBorder ?? null,
+          p_custom_border_url: input.customBorderUrl ?? null,
+          p_social_links: input.socialLinks ?? null
+        });
+        if (error) throw error;
+      }
+    },
+    [currentUserId, getCommunity, session]
+  );
+
+  const setCommunityNotify = useCallback(
+    async (communityId: ID, enabled: boolean) => {
+      setCommunities((items) =>
+        items.map((item) => (item.id === communityId ? { ...item, notifyOnPost: enabled } : item))
+      );
+
+      if (supabase && session?.user) {
+        const { error } = await supabase.rpc('set_community_notify', {
+          p_community_id: communityId,
+          p_enabled: enabled
+        });
+        if (error) throw error;
+      }
+    },
+    [session]
+  );
+
+  const deleteComment = useCallback(
+    async (postId: ID, commentId: ID) => {
+      const post = posts.find((p) => p.id === postId);
+      const comment = post?.comments.find((c) => c.id === commentId);
+      if (!comment) return;
+      if (comment.authorId !== currentUserId) {
+        throw new Error('You can only delete your own replies.');
+      }
+
+      setPosts((items) =>
+        items.map((p) =>
+          p.id === postId ? { ...p, comments: p.comments.filter((c) => c.id !== commentId) } : p
+        )
+      );
+
+      if (supabase && session?.user) {
+        const { error } = await supabase.rpc('delete_comment', { p_comment_id: commentId });
+        if (error) throw error;
+      }
+    },
+    [currentUserId, posts, session]
   );
 
   const setCommunityModerator = useCallback(
@@ -1114,6 +1249,7 @@ export function SocialProvider({ children }: PropsWithChildren) {
       searchCommunities,
       createPost,
       deletePost,
+      deleteComment,
       toggleLike,
       addComment,
       sendFriendRequest,
@@ -1126,6 +1262,9 @@ export function SocialProvider({ children }: PropsWithChildren) {
       joinCommunity,
       leaveCommunity,
       pinPost,
+      unpinPost,
+      updateCommunity,
+      setCommunityNotify,
       setCommunityModerator,
       banCommunityMember,
       markNotificationsRead
@@ -1140,6 +1279,7 @@ export function SocialProvider({ children }: PropsWithChildren) {
       createCommunity,
       createPost,
       currentUserId,
+      deleteComment,
       deletePost,
       follow,
       follows,
@@ -1168,6 +1308,9 @@ export function SocialProvider({ children }: PropsWithChildren) {
       markNotificationsRead,
       notifications,
       pinPost,
+      unpinPost,
+      updateCommunity,
+      setCommunityNotify,
       posts,
       profiles,
       refresh,

@@ -1,6 +1,6 @@
 import { useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft, MessageCircle, UserRound } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Alert, StyleSheet } from 'react-native';
 
 import { ProfileHeader, type ProfileTab } from '@/components/ProfileHeader';
@@ -33,13 +33,25 @@ export default function UserScreen() {
     canViewProfile,
     isFollowing,
     follow,
-    unfollow
+    unfollow,
+    refresh,
+    isLoading
   } = usePocketData();
   const { openThreadWith } = useMessaging();
   const [tab, setTab] = useState<ProfileTab>('posts');
   const [openingDm, setOpeningDm] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const target = getProfile(id);
   const ra = useRetroAchievements(target?.raUsername);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refresh();
+      await ra.refetch?.();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refresh, ra]);
 
   if (!target) {
     return (
@@ -103,7 +115,7 @@ export default function UserScreen() {
   }
 
   return (
-    <Screen scroll>
+    <Screen scroll refreshing={refreshing || isLoading} onRefresh={() => void onRefresh()}>
       <Row style={styles.topActions}>
         <Button label="Back" icon={ArrowLeft} compact variant="ghost" onPress={() => router.back()} />
         {!isCurrentUser ? (

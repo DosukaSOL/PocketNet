@@ -14,6 +14,24 @@ export type ReleaseEntry = {
 
 export const RELEASES: ReleaseEntry[] = [
   {
+    version: '1.3.3',
+    date: '2026-05-21',
+    title: 'Live profile preview, GIF replies, community studio, pull-to-refresh',
+    highlights: [
+      'Edit Profile now shows a live preview of your card as you tweak it — see borders, avatar, banner, and bio before saving',
+      'Borders are split into Static and Animated sections — plus brand-new Lightning, Fire, and Glitch animated borders',
+      'Upload your own GIF border (recommended 600 × 600, under 4 MB) and have it rotate around your card',
+      'Delete your own comments and replies — owner-only, with confirmation',
+      'Communities get a real studio: avatar, banner, bio, social links, border presets, and an Edit Community screen for the creator',
+      'Per-community notifications toggle — get pinged when new posts land in the communities you care about',
+      'Pin / unpin posts as community owner or moderator (owner can still override)',
+      'Tenor GIF picker in the reply composer and the post composer — search and tap to insert',
+      'Pull-to-refresh on every feed: Home, Discover, Profile, Notifications, Community, User, Settings, Friends, Create',
+      'Crop your profile picture and banner when uploading (1:1 for avatars, 3:1 for banners)',
+      'Fixed “mime type image/gif is not supported” — animated GIFs now upload everywhere'
+    ]
+  },
+  {
     version: '1.3.2',
     date: '2026-05-20',
     title: 'Reply threads, @mentions, notifications inbox, levels, borders',

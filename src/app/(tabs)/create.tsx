@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import { BrandMark } from '@/components/BrandMark';
+import { GifPicker } from '@/components/social/GifPicker';
 import { StatusComposer } from '@/components/social/StatusComposer';
 import { AppText, Badge, Button, GlowCard, PressableScale, Row, Screen, Stack } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
@@ -15,13 +16,14 @@ import { colors, radius, spacing } from '@/design/tokens';
 
 export default function CreateScreen() {
   const { profile } = useAuth();
-  const { communities, createPost } = usePocketData();
+  const { communities, createPost, refresh, isLoading } = usePocketData();
   const { layout } = useThemeChoice();
   const { showToast } = useToast();
   const [body, setBody] = useState('');
   const [communityId, setCommunityId] = useState<string | undefined>();
   const [imageUri, setImageUri] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
+  const [tenorVisible, setTenorVisible] = useState(false);
   const joinedCommunities = communities.filter((community) =>
     profile ? community.memberIds.includes(profile.id) : false
   );
@@ -72,6 +74,7 @@ export default function CreateScreen() {
       imageUri={imageUri}
       onChooseImage={() => void chooseImage()}
       onChooseGif={() => void chooseGif()}
+      onChooseTenor={() => setTenorVisible(true)}
       onRemoveImage={() => setImageUri(undefined)}
       onSubmit={() => void publish()}
       loading={loading}
@@ -119,7 +122,7 @@ export default function CreateScreen() {
   const composerFirst = layout === 'split-input-top';
 
   return (
-    <Screen scroll>
+    <Screen scroll refreshing={isLoading} onRefresh={() => void refresh()}>
       <Row style={styles.heroHeader}>
         <BrandMark size={38} />
         <Stack gap={spacing.xs} style={styles.heroCopy}>
@@ -133,6 +136,11 @@ export default function CreateScreen() {
 
       {composerFirst ? composer : destination}
       {composerFirst ? destination : composer}
+      <GifPicker
+        visible={tenorVisible}
+        onClose={() => setTenorVisible(false)}
+        onPick={(url) => setImageUri(url)}
+      />
     </Screen>
   );
 }

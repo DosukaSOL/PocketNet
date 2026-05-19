@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/features/auth/AuthProvider';
 import { fetchRecentAchievements, verifyRaAccount, type RaAchievement } from '@/lib/retroachievements';
@@ -21,6 +21,10 @@ const initial: State = { achievements: [], points: 0, loading: false };
 export function useRetroAchievements(targetRaUsername?: string) {
   const { profile } = useAuth();
   const [state, setState] = useState<State>(initial);
+  const [tick, setTick] = useState(0);
+  const refetch = useCallback(async () => {
+    setTick((t) => t + 1);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,7 +93,7 @@ export function useRetroAchievements(targetRaUsername?: string) {
     return () => {
       cancelled = true;
     };
-  }, [profile?.id, profile?.raUsername, targetRaUsername]);
+  }, [profile?.id, profile?.raUsername, targetRaUsername, tick]);
 
-  return state;
+  return { ...state, refetch };
 }

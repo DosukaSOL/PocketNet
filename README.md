@@ -46,7 +46,26 @@ PocketNet is standalone and is not affiliated with AYN, Cocoon, Daijisho, ES-DE,
 
 ## Beta Status — What Works & What Doesn't
 
-PocketNet **v1.3.2** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+PocketNet **v1.3.3** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+
+### What's new in v1.3.3
+
+- **Live profile preview.** Edit Profile renders a real-time `ProfileHeader` at the top that updates as you type — display name, bio, avatar, banner, and border preview update without saving.
+- **Static and Animated border sections.** Borders are split into two pickers. New animated borders: **lightning** (cyan strobe), **fire** (warm pulse), **glitch** (jittery RGB).
+- **Upload your own GIF border.** New `border-images` storage bucket with creator-folder RLS. Recommended size shown in the UI: **600 × 600 GIF, under 4 MB**. The GIF rotates around your full card.
+- **Delete your own comments.** Owner-only trash icon with confirm. Backed by a SECURITY DEFINER `delete_comment` RPC that only the comment author can call.
+- **Community studio.** Communities now have an avatar, bio, social links, animated borders, and per-community notifications. The community page wraps the hero in `AnimatedCardBorder` and renders the avatar, bio, and a row of social link buttons.
+- **Edit Community screen (owner only).** `/community/edit/<id>` lets the creator change name, description, bio, avatar (1:1 crop), banner (3:1 crop), GIF banner/avatar, animated border, GIF border upload, and six social fields. Saves via the `update_community` RPC.
+- **Per-community notifications.** Bell button toggles `community_memberships.notify_on_post`. A SECURITY DEFINER trigger fans out `community_post` notifications to every member with the toggle on (blocked + banned pairs are skipped).
+- **Owner + Moderator pin/unpin.** `pin_community_post(p_community_id, null)` unpins. The pinned section gets an Unpin button for moderators and the creator.
+- **Tenor GIF picker.** Reply composer and post composer get a GIF button that opens a Tenor search modal (3-column grid). Without a key it falls back to a paste-a-URL field validated by regex. Replies render embedded GIFs inline.
+- **Pull-to-refresh everywhere.** Home, Discover, Profile, Notifications, Community, User, Settings, Friends, Create, Messages — drag down to refresh.
+- **Crop on upload.** `pickImage` takes an `aspect` parameter. Avatars crop to 1:1, banners crop to 3:1. GIF uploads skip cropping so animation is preserved.
+- **GIF mime fix.** All six image buckets now accept any MIME; the previous “mime type image/gif is not supported” error is gone.
+
+#### Optional environment variable
+
+- `EXPO_PUBLIC_TENOR_KEY` — when set, enables in-app Tenor search in the GIF picker. Without it the GIF picker gracefully falls back to a paste-a-URL field. The key is **public** by design (Tenor v2 search) and is never committed; it is read at runtime from the build's environment.
 
 ### What's new in v1.3.2
 

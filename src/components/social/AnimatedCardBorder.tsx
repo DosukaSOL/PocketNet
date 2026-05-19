@@ -12,7 +12,23 @@ export type BorderPreset =
   | 'aurora'
   | 'gold'
   | 'retro'
-  | 'plasma';
+  | 'plasma'
+  | 'lightning'
+  | 'fire'
+  | 'glitch';
+
+export const STATIC_BORDERS: BorderPreset[] = ['classic'];
+export const ANIMATED_BORDERS: BorderPreset[] = [
+  'neon',
+  'sunset',
+  'aurora',
+  'gold',
+  'retro',
+  'plasma',
+  'lightning',
+  'fire',
+  'glitch'
+];
 
 const PRESET_STOPS: Record<BorderPreset, string[]> = {
   classic: [`${colors.accentCyan}66`, `${colors.accentCyan}66`, `${colors.accentCyan}66`],
@@ -21,10 +37,26 @@ const PRESET_STOPS: Record<BorderPreset, string[]> = {
   aurora: ['#22D3EE', '#34D399', colors.accentPurple, '#22D3EE'],
   gold: [colors.warning, '#FFF1B8', colors.warning],
   retro: [colors.accentCyan, '#B4FF39', colors.accentCyan],
-  plasma: [colors.accentPurple, colors.accentPink, colors.accentCyan, colors.accentPurple]
+  plasma: [colors.accentPurple, colors.accentPink, colors.accentCyan, colors.accentPurple],
+  lightning: [colors.accentCyan, '#FFFFFF', '#FFE45C', colors.accentCyan],
+  fire: ['#FF4500', '#FF8C00', '#FFD000', '#FF4500'],
+  glitch: [colors.accentPink, colors.accentCyan, '#39FF14', colors.accentPink]
 };
 
 const BORDER_THICKNESS = 4;
+
+function durationFor(preset: BorderPreset): number {
+  switch (preset) {
+    case 'lightning':
+      return 600;
+    case 'fire':
+      return 1800;
+    case 'glitch':
+      return 320;
+    default:
+      return 4200;
+  }
+}
 
 type Props = {
   preset?: BorderPreset | string | null;
@@ -42,6 +74,8 @@ export function AnimatedCardBorder({
   style
 }: Props) {
   const progress = useRef(new Animated.Value(0)).current;
+  const strobe = useRef(new Animated.Value(1)).current;
+  const jitter = useRef(new Animated.Value(0)).current;
   const hasCustom = Boolean(customBorderUrl && customBorderUrl.startsWith('https://'));
   const isAnimated = !hasCustom && preset && preset !== 'classic';
   const presetKey: BorderPreset = (
@@ -51,24 +85,81 @@ export function AnimatedCardBorder({
   useEffect(() => {
     if (!isAnimated && !hasCustom) {
       progress.setValue(0);
+      strobe.setValue(1);
+      jitter.setValue(0);
       return;
     }
     const loop = Animated.loop(
       Animated.timing(progress, {
         toValue: 1,
-        duration: 4200,
+        duration: durationFor(presetKey),
         easing: Easing.linear,
         useNativeDriver: true
       })
     );
     loop.start();
-    return () => loop.stop();
-  }, [progress, isAnimated, hasCustom]);
+
+    let extra: Animated.CompositeAnimation | undefined;
+
+    if (presetKey === 'lightning') {
+      extra = Animated.loop(
+        Animated.sequence([
+          Animated.timing(strobe, { toValue: 0.55, duration: 80, useNativeDriver: true }),
+          Animated.timing(strobe, { toValue: 1, duration: 110, useNativeDriver: true }),
+          Animated.timing(strobe, { toValue: 0.7, duration: 60, useNativeDriver: true }),
+          Animated.timing(strobe, { toValue: 1, duration: 350, useNativeDriver: true })
+        ])
+      );
+      extra.start();
+    } else if (presetKey === 'glitch') {
+      extra = Animated.loop(
+        Animated.sequence([
+          Animated.timing(jitter, { toValue: 2, duration: 60, useNativeDriver: true }),
+          Animated.timing(jitter, { toValue: -2, duration: 60, useNativeDriver: true }),
+          Animated.timing(jitter, { toValue: 0, duration: 60, useNativeDriver: true }),
+          Animated.delay(160)
+        ])
+      );
+      extra.start();
+    } else if (presetKey === 'fire') {
+      extra = Animated.loop(
+        Animated.sequence([
+          Animated.timing(strobe, {
+            toValue: 1.04,
+            duration: 900,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true
+          }),
+          Animated.timing(strobe, {
+            toValue: 0.96,
+            duration: 900,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true
+          })
+        ])
+      );
+      extra.start();
+    }
+
+    return () => {
+      loop.stop();
+      extra?.stop();
+    };
+  }, [progress, strobe, jitter, isAnimated, hasCustom, presetKey]);
 
   const rotate = progress.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg']
   });
+
+  const transform = (
+    presetKey === 'glitch'
+      ? [{ rotate }, { translateX: jitter }]
+      : presetKey === 'fire'
+        ? [{ rotate }, { scale: strobe }]
+        : [{ rotate }]
+  ) as unknown as Animated.WithAnimatedArray<never>;
+  const customTransform = [{ rotate }] as unknown as Animated.WithAnimatedArray<never>;
 
   return (
     <View style={[styles.outer, { borderRadius: r }, style]}>
@@ -78,7 +169,7 @@ export function AnimatedCardBorder({
             pointerEvents="none"
             style={[
               StyleSheet.absoluteFill,
-              { borderRadius: r, overflow: 'hidden', transform: [{ rotate }] }
+              { borderRadius: r, overflow: 'hidden', transform: customTransform } as unknown as import('react-native').ViewStyle
             ]}
           >
             <Image
@@ -94,7 +185,12 @@ export function AnimatedCardBorder({
             pointerEvents="none"
             style={[
               StyleSheet.absoluteFill,
-              { borderRadius: r, overflow: 'hidden', transform: [{ rotate }] }
+              {
+                borderRadius: r,
+                overflow: 'hidden',
+                transform,
+                opacity: presetKey === 'lightning' ? strobe : 1
+              } as unknown as import('react-native').ViewStyle
             ]}
           >
             <LinearGradient

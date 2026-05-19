@@ -122,7 +122,7 @@ export function postFromRow(row: PostRow): Post {
   };
 }
 
-export function communityFromRow(row: CommunityRow): Community {
+export function communityFromRow(row: CommunityRow, currentUserId?: string): Community {
   const memberships = Array.isArray(row.community_memberships) ? row.community_memberships : [];
   const roles = Object.fromEntries(
     memberships.map((membership) => [
@@ -131,12 +131,22 @@ export function communityFromRow(row: CommunityRow): Community {
     ])
   ) as Record<string, CommunityRole>;
 
+  const myMembership = currentUserId
+    ? memberships.find((m) => String((m as CommunityRow).user_id) === currentUserId)
+    : undefined;
+
   return {
     id: String(row.id),
     slug: String(row.slug),
     name: String(row.name),
     description: String(row.description ?? ''),
     bannerUrl: row.banner_url ? String(row.banner_url) : undefined,
+    avatarUrl: row.avatar_url ? String(row.avatar_url) : undefined,
+    bio: row.bio ? String(row.bio) : undefined,
+    socialLinks: stringRecord(row.social_links),
+    cardBorder: row.card_border ? String(row.card_border) : 'classic',
+    customBorderUrl: row.custom_border_url ? String(row.custom_border_url) : undefined,
+    notifyOnPost: Boolean(myMembership && (myMembership as CommunityRow).notify_on_post),
     creatorId: String(row.creator_id),
     memberIds: memberships
       .filter((membership) => String((membership as CommunityRow).role) !== 'banned')

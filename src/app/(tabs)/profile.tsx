@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Settings, UserRound } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { BrandMark } from '@/components/BrandMark';
@@ -21,10 +21,22 @@ export default function ProfileScreen() {
     getFollowersOf,
     getCommunitiesOf,
     joinCommunity,
-    leaveCommunity
+    leaveCommunity,
+    refresh,
+    isLoading
   } = usePocketData();
   const [tab, setTab] = useState<ProfileTab>('posts');
+  const [refreshing, setRefreshing] = useState(false);
   const ra = useRetroAchievements(profile?.raUsername);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refresh();
+      await ra.refetch?.();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refresh, ra]);
 
   if (!profile) {
     return (
@@ -45,7 +57,7 @@ export default function ProfileScreen() {
   const memberCommunities = getCommunitiesOf(profile.id);
 
   return (
-    <Screen scroll>
+    <Screen scroll refreshing={refreshing || isLoading} onRefresh={() => void onRefresh()}>
       <Row style={styles.headerActions}>
         <BrandMark size={34} />
         <Stack gap={2} style={styles.headerTitle}>

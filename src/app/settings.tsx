@@ -15,7 +15,7 @@ import {
   UserRound
 } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { AppText, Badge, Button, GlowCard, Row, Screen, Stack, TextField } from '@/components/ui';
@@ -38,6 +38,7 @@ const layoutOptions: { value: LayoutPreference; label: string; description: stri
 export default function SettingsScreen() {
   const { signOut, isPreviewMode, hasSupabaseConfig, profile, patchProfile } = useAuth();
   const { theme, setTheme, layout, setLayout, pendingRestart } = useThemeChoice();
+  const [refreshing, setRefreshing] = useState(false);
 
   const [raUsername, setRaUsername] = useState(profile?.raUsername ?? '');
   const [raPassword, setRaPassword] = useState('');
@@ -51,6 +52,18 @@ export default function SettingsScreen() {
   const [pushBusy, setPushBusy] = useState(false);
 
   const [privacyBusy, setPrivacyBusy] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      if (profile?.id) {
+        const enabled = await getPushEnabled(profile.id);
+        setPushStatus(enabled ? 'on' : 'off');
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }, [profile?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -220,7 +233,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <Screen scroll>
+    <Screen scroll refreshing={refreshing} onRefresh={() => void onRefresh()}>
       <Button label="Back" icon={ArrowLeft} compact variant="ghost" onPress={() => router.back()} />
       <Stack gap={spacing.xs}>
         <Badge label="Settings" tone="neutral" />

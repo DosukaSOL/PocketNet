@@ -25,7 +25,14 @@ function inferContentType(uri: string, fallbackExt: string): { contentType: stri
   return { contentType: 'image/jpeg', extension: fallbackExt || 'jpg' };
 }
 
-export async function pickImage(): Promise<PickedImage | null> {
+export type PickImageOptions = {
+  /** Aspect ratio for the built-in cropper (e.g. [1,1] avatar, [3,1] banner). */
+  aspect?: [number, number];
+  /** Disable cropping entirely. */
+  allowsEditing?: boolean;
+};
+
+export async function pickImage(options: PickImageOptions = {}): Promise<PickedImage | null> {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
   if (!permission.granted) {
@@ -33,7 +40,8 @@ export async function pickImage(): Promise<PickedImage | null> {
   }
 
   const result = await ImagePicker.launchImageLibraryAsync({
-    allowsEditing: true,
+    allowsEditing: options.allowsEditing ?? true,
+    aspect: options.aspect,
     quality: 0.82,
     mediaTypes: ImagePicker.MediaTypeOptions.Images
   });
@@ -82,7 +90,7 @@ export async function pickGif(): Promise<PickedImage | null> {
 }
 
 export async function uploadImage(args: {
-  bucket: 'avatars' | 'banners' | 'post-images' | 'community-banners';
+  bucket: 'avatars' | 'banners' | 'post-images' | 'community-banners' | 'community-avatars' | 'border-images';
   userId: string;
   uri: string;
 }) {

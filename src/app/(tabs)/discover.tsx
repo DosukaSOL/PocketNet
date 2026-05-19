@@ -43,6 +43,16 @@ export default function DiscoverScreen() {
   const featuredCommunities = communities.slice(0, 2);
   const otherCommunities = communities.slice(2);
 
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refresh]);
+
   useFocusEffect(
     useCallback(() => {
       void refresh();
@@ -70,7 +80,7 @@ export default function DiscoverScreen() {
   }
 
   return (
-    <Screen scroll>
+    <Screen scroll refreshing={refreshing} onRefresh={() => void onRefresh()}>
       <Row style={styles.heroHeader}>
         <BrandMark size={38} />
         <Stack gap={spacing.xs} style={styles.heroCopy}>

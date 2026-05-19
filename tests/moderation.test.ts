@@ -10,6 +10,9 @@ const community: Community = {
   slug: 'thor-lab',
   name: 'Thor Lab',
   description: 'Dual-screen handheld setups.',
+  socialLinks: {},
+  cardBorder: 'classic',
+  notifyOnPost: false,
   creatorId: 'creator',
   memberIds: ['creator', 'mod', 'member'],
   roles: {

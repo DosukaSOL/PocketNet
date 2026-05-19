@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { ArrowLeft, MessageCircle, UserPlus, Users } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
@@ -20,9 +20,18 @@ import { usePocketData } from '@/features/social/SocialProvider';
 import { isOnline, presenceLabel } from '@/lib/presence';
 
 export default function FriendsScreen() {
-  const { getFriends, getIncomingRequests, acceptFriendRequest, rejectFriendRequest } = usePocketData();
+  const { getFriends, getIncomingRequests, acceptFriendRequest, rejectFriendRequest, refresh, isLoading } = usePocketData();
   const { openThreadWith } = useMessaging();
   const friends = getFriends();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refresh]);
   const incoming = getIncomingRequests();
   const [opening, setOpening] = useState<string | null>(null);
 
@@ -39,7 +48,7 @@ export default function FriendsScreen() {
   }
 
   return (
-    <Screen scroll>
+    <Screen scroll refreshing={refreshing || isLoading} onRefresh={() => void onRefresh()}>
       <Row style={styles.topActions}>
         <Button label="Back" icon={ArrowLeft} compact variant="ghost" onPress={() => router.back()} />
       </Row>

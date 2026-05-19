@@ -1,12 +1,13 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Flag, Heart, MessageCircle, MoreHorizontal, Pin, Send, Trash2, X } from 'lucide-react-native';
+import { Flag, Heart, ImagePlus, MessageCircle, MoreHorizontal, Pin, Send, Trash2, X } from 'lucide-react-native';
 import { useMemo, useRef, useState } from 'react';
 import { Alert, Animated, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Avatar, Badge, Button, GlowCard, IconButton, Reveal, Row, Stack, TextField } from '@/components/ui';
 import { DeviceBadge, FrontendBadge } from '@/components/device';
 import { CommentCard } from '@/components/social/CommentCard';
+import { GifPicker } from '@/components/social/GifPicker';
 import { colors, radius, shadows, spacing } from '@/design/tokens';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
@@ -16,9 +17,10 @@ import type { Post } from '@/types/domain';
 
 export function PostCard({ post, compact = false }: { post: Post; compact?: boolean }) {
   const { profile } = useAuth();
-  const { getProfile, getCommunity, toggleLike, addComment, deletePost, report } = usePocketData();
+  const { getProfile, getCommunity, toggleLike, addComment, deletePost, deleteComment, report } = usePocketData();
   const [comment, setComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<{ commentId: string; username: string } | null>(null);
+  const [gifVisible, setGifVisible] = useState(false);
   const likeScale = useRef(new Animated.Value(1)).current;
   const author = getProfile(post.authorId);
   const community = getCommunity(post.communityId);
@@ -172,6 +174,8 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
                 onReply={() =>
                   handleReplyTo(item.id, commentAuthor?.username ?? 'player')
                 }
+                canDelete={item.authorId === profile?.id}
+                onDelete={() => void deleteComment(post.id, item.id)}
               />
             );
           })}
@@ -202,8 +206,16 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
                 onSubmitEditing={() => void handleAddComment()}
               />
             </View>
+            <IconButton icon={ImagePlus} label="Add GIF" onPress={() => setGifVisible(true)} />
             <Button label="Send" compact icon={Send} variant="secondary" onPress={() => void handleAddComment()} />
           </Row>
+          <GifPicker
+            visible={gifVisible}
+            onClose={() => setGifVisible(false)}
+            onPick={(url) => {
+              setComment((current) => (current.trim() ? `${current.trim()} ${url}` : url));
+            }}
+          />
         </Stack>
       ) : null}
       </GlowCard>

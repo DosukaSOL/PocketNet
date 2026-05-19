@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.3.3 - Live profile preview, GIF replies, community studio, pull-to-refresh
+
+A polish + features pack. v1.3.3 adds a **live preview** in Edit Profile, splits borders into **Static** and **Animated** sections, ships **three new animated borders** (lightning, fire, glitch), lets you **upload your own GIF border**, lets you **delete your own comments**, gives **communities a real studio** (avatar, banner, bio, social links, animated borders, edit screen for the owner) with **per-community notifications** and **owner + moderator pin/unpin**, adds a **Tenor GIF picker** for replies and posts, brings **pull-to-refresh to every feed**, lets you **crop your avatar and banner**, and fixes the **`mime type image/gif is not supported`** upload error.
+
+### New features
+
+- **Live profile preview.** Edit Profile renders a real `ProfileHeader` at the top of the page that updates as you type — display name, bio, avatar, banner, and border preview update without saving.
+- **Static vs Animated borders.** Two separate `ChipPicker`s. Static: `classic`. Animated: `neon`, `sunset`, `aurora`, `gold`, `retro`, `plasma`, **lightning** (cyan strobe), **fire** (warm pulse), **glitch** (jittery RGB).
+- **Custom GIF border upload.** New `border-images` storage bucket with creator-folder RLS. Upload a 600 × 600 GIF (under 4 MB) and it rotates around your card. Help copy in the UI states the recommended dimensions.
+- **Delete your own comments.** Comments now show a trash icon when `comment.authorId === profile.id`, with a confirm dialog. The `delete_comment` RPC is author-only.
+- **Community studio.** Communities gain `avatar_url`, `bio`, `social_links` (jsonb), `card_border`, `custom_border_url`. The community header renders the avatar, bio, social links row, and wraps the hero in `AnimatedCardBorder`. The creator sees an "Edit community" button that opens `/community/edit/<id>`.
+- **Edit community screen.** A creator-only form with name, description, bio, avatar (with 1:1 crop), banner (with 3:1 crop), GIF banner/avatar option, animated border picker, custom GIF border upload, and six social fields (twitter, discord, twitch, youtube, github, website). All changes go through the `update_community` RPC.
+- **Per-community notifications.** A bell button on the community page toggles `notify_on_post` in your `community_memberships` row. When a new post lands, a SECURITY DEFINER trigger fans out `community_post` notifications to every member with the toggle on (excluding the author, blocked pairs, and banned members).
+- **Owner + moderator pinning.** `pin_community_post` RPC accepts a null `p_post_id` to unpin. The community page renders an Unpin button next to the pinned section for moderators and the creator.
+- **Tenor GIF picker.** Reply composer and post composer get a GIF button that opens a modal. If `EXPO_PUBLIC_TENOR_KEY` is set, you get a live Tenor search grid. Otherwise the modal falls back to a paste-a-URL field validated by `^https://...\.(gif|webp)`. Replies render embedded GIFs inline as `expo-image` previews.
+- **Pull-to-refresh everywhere.** Home, Discover, Profile, Notifications, Community, User, Settings, Friends, Create, and Messages all support drag-down to refresh via `Screen scroll refreshing onRefresh`.
+- **Crop on upload.** `pickImage()` now takes an `aspect` parameter; avatars crop to 1:1, banners crop to 3:1. GIF uploads skip cropping to preserve animation.
+- **Bucket MIME fix.** All six image buckets (`avatars`, `banners`, `post-images`, `community-banners`, `community-avatars`, `border-images`) now have `allowed_mime_types = null` so animated GIFs and webp images upload without the “mime type image/gif is not supported” error.
+
+### Security
+
+- New RPCs (`pin_community_post`, `update_community`, `set_community_notify`, `delete_comment`) are all SECURITY DEFINER with `set search_path = public`, REVOKEd from `public`/`anon`, GRANTed only to `authenticated`. Each enforces ownership / role / authorship inside the function body.
+- New trigger `tg_notify_on_community_post()` runs as definer, uses `set search_path = public`, joins through `public.blocks` to skip blocked pairs, and excludes the post author and banned members.
+- `border-images` and `community-avatars` storage policies use `(storage.foldername(name))[1] = auth.uid()::text` — users can only write inside their own folder.
+- `communities.custom_border_url` keeps the same `^https://` + image-extension CHECK; `bio` is capped at 500 chars.
+- The Tenor key is read from `process.env.EXPO_PUBLIC_TENOR_KEY`. If absent, the picker gracefully falls back to URL paste — no key is ever bundled.
+
 ## 1.3.2 - Reply threads, @mentions, notifications inbox, levels, animated borders
 
 A big feature pack on top of the v1.3.x notification work. v1.3.2 adds **threaded comment replies**, **@username mentions** that fan out to real notifications, a dedicated **Notifications inbox** screen with a bell + unread count on the Home header, **friend + follow coexistence**, a **"Type your own"** textbox for every "Other" picker, an **XP / leveling** system that ties activity to a visible level chip, **animated profile card borders** (presets + custom HTTPS image URL — animated GIFs work and wrap the entire card, not just the avatar), **GIF avatars and banners**, and a **RetroAchievements help popover** with a step-by-step Web API key guide and safety warning.

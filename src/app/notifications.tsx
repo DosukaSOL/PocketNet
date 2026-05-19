@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { ArrowLeft, BellOff, CheckCheck } from 'lucide-react-native';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { NotificationCard } from '@/components/social/NotificationCard';
@@ -9,7 +9,16 @@ import { colors, spacing } from '@/design/tokens';
 import { usePocketData } from '@/features/social/SocialProvider';
 
 export default function NotificationsScreen() {
-  const { notifications, markNotificationsRead } = usePocketData();
+  const { notifications, markNotificationsRead, refresh, isLoading } = usePocketData();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refresh]);
   const sorted = [...notifications].sort(
     (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
   );
@@ -22,7 +31,7 @@ export default function NotificationsScreen() {
   );
 
   return (
-    <Screen scroll>
+    <Screen scroll refreshing={refreshing || isLoading} onRefresh={() => void onRefresh()}>
       <Row style={styles.topActions}>
         <Button label="Back" icon={ArrowLeft} compact variant="ghost" onPress={() => router.back()} />
         {unreadCount ? (

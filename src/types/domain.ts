@@ -95,11 +95,31 @@ export type Community = {
   name: string;
   description: string;
   bannerUrl?: string;
+  avatarUrl?: string;
+  bio?: string;
+  socialLinks: SocialLinks;
+  cardBorder: string;
+  customBorderUrl?: string;
+  notifyOnPost: boolean;
   creatorId: ID;
   memberIds: ID[];
   roles: Record<ID, CommunityRole>;
   pinnedPostId?: ID;
   createdAt: string;
+};
+
+export type UpdateCommunityInput = {
+  name?: string;
+  description?: string;
+  bio?: string;
+  cardBorder?: string;
+  customBorderUrl?: string;
+  socialLinks?: SocialLinks;
+  avatarUri?: string;
+  bannerUri?: string;
+  /** Pass empty string to clear; undefined to leave unchanged. */
+  avatarUrl?: string;
+  bannerUrl?: string;
 };
 
 export type Notification = {
@@ -115,6 +135,7 @@ export type Notification = {
     | 'comment_reply'
     | 'mention'
     | 'community_join'
+    | 'community_post'
     | 'achievement'
     | 'level_up'
     | 'moderation';
