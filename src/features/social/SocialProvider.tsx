@@ -32,6 +32,7 @@ import type {
   Community,
   CreateCommunityInput,
   CreatePostInput,
+  Follow,
   FriendRequest,
   Friendship,
   ID,
@@ -48,6 +49,7 @@ type SocialContextValue = {
   communities: Community[];
   friendRequests: FriendRequest[];
   friendships: Friendship[];
+  follows: Follow[];
   blocks: Block[];
   notifications: Notification[];
   isLoading: boolean;
@@ -57,7 +59,12 @@ type SocialContextValue = {
   getCommunityPosts: (communityId: ID) => Post[];
   getProfilePosts: (profileId: ID) => Post[];
   getHomeFeed: () => Post[];
+  getExploreFeed: () => Post[];
   getFriends: () => Profile[];
+  getFollowing: () => Profile[];
+  isFollowing: (profileId: ID) => boolean;
+  follow: (profileId: ID) => Promise<void>;
+  unfollow: (profileId: ID) => Promise<void>;
   getIncomingRequests: () => FriendRequest[];
   getOutgoingRequests: () => FriendRequest[];
   searchUsers: (query: string) => Profile[];
@@ -112,6 +119,7 @@ export function SocialProvider({ children }: PropsWithChildren) {
   const [friendships, setFriendships] = useState<Friendship[]>(
     isPreviewMode ? seedFriendships : []
   );
+  const [follows, setFollows] = useState<Follow[]>([]);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>(
     isPreviewMode ? seedNotifications : []
@@ -127,7 +135,7 @@ export function SocialProvider({ children }: PropsWithChildren) {
     setIsLoading(true);
 
     try {
-      const [profilesResult, postsResult, communitiesResult, friendshipsResult, requestsResult] =
+      const [profilesResult, postsResult, communitiesResult, friendshipsResult, requestsResult, followsResult] =
         await Promise.all([
           supabase.from('profiles').select('*').order('updated_at', { ascending: false }),
           supabase
@@ -140,7 +148,8 @@ export function SocialProvider({ children }: PropsWithChildren) {
             .select('*, community_memberships(*)')
             .order('created_at', { ascending: false }),
           supabase.from('friendships').select('*'),
-          supabase.from('friend_requests').select('*').eq('status', 'pending')
+          supabase.from('friend_requests').select('*').eq('status', 'pending'),
+          supabase.from('follows').select('*')
         ]);
 
       if (profilesResult.data) {
@@ -173,6 +182,16 @@ export function SocialProvider({ children }: PropsWithChildren) {
             fromUserId: String(row.from_user_id),
             toUserId: String(row.to_user_id),
             status: String(row.status) as FriendRequest['status'],
+            createdAt: String(row.created_at)
+          }))
+        );
+      }
+
+      if (followsResult.data) {
+        setFollows(
+          followsResult.data.map((row) => ({
+            followerId: String(row.follower_id),
+            followeeId: String(row.followee_id),
             createdAt: String(row.created_at)
           }))
         );
@@ -240,21 +259,114 @@ export function SocialProvider({ children }: PropsWithChildren) {
   }, [currentUserId, friendships, isBlocked, profiles]);
 
   const getHomeFeed = useCallback(() => {
-    const friendIds = getFriends().map((friend) => friend.id);
-    const joinedCommunityIds = communities
-      .filter((community) => community.memberIds.includes(currentUserId))
-      .map((community) => community.id);
+    const friendIds = new Set(getFriends().map((friend) => friend.id));
+    const followingIds = new Set(
+      follows.filter((follow) => follow.followerId === currentUserId).map((follow) => follow.followeeId)
+    );
+    const joinedCommunityIds = new Set(
+      communities
+        .filter((community) => community.memberIds.includes(currentUserId))
+        .map((community) => community.id)
+    );
 
     return sortNewest(
       posts.filter(
         (post) =>
           !isBlocked(post.authorId) &&
           (post.authorId === currentUserId ||
-            friendIds.includes(post.authorId) ||
-            (post.communityId && joinedCommunityIds.includes(post.communityId)))
+            friendIds.has(post.authorId) ||
+            followingIds.has(post.authorId) ||
+            (post.communityId && joinedCommunityIds.has(post.communityId)))
       )
     );
-  }, [communities, currentUserId, getFriends, isBlocked, posts]);
+  }, [communities, currentUserId, follows, getFriends, isBlocked, posts]);
+
+  const getExploreFeed = useCallback(() => {
+    const friendIds = new Set(getFriends().map((friend) => friend.id));
+    const followingIds = new Set(
+      follows.filter((follow) => follow.followerId === currentUserId).map((follow) => follow.followeeId)
+    );
+
+    return sortNewest(
+      posts.filter(
+        (post) =>
+          !isBlocked(post.authorId) &&
+          post.authorId !== currentUserId &&
+          !friendIds.has(post.authorId) &&
+          !followingIds.has(post.authorId) &&
+          !post.communityId
+      )
+    );
+  }, [currentUserId, follows, getFriends, isBlocked, posts]);
+
+  const getFollowing = useCallback(() => {
+    const followeeIds = new Set(
+      follows.filter((follow) => follow.followerId === currentUserId).map((follow) => follow.followeeId)
+    );
+    return profiles.filter((item) => followeeIds.has(item.id) && !isBlocked(item.id));
+  }, [currentUserId, follows, isBlocked, profiles]);
+
+  const isFollowing = useCallback(
+    (profileId: ID) =>
+      follows.some(
+        (follow) => follow.followerId === currentUserId && follow.followeeId === profileId
+      ),
+    [currentUserId, follows]
+  );
+
+  const follow = useCallback(
+    async (profileId: ID) => {
+      if (profileId === currentUserId || isBlocked(profileId)) {
+        return;
+      }
+      if (follows.some((f) => f.followerId === currentUserId && f.followeeId === profileId)) {
+        return;
+      }
+      const next: Follow = {
+        followerId: currentUserId,
+        followeeId: profileId,
+        createdAt: new Date().toISOString()
+      };
+      setFollows((items) => [next, ...items]);
+      if (supabase && session?.user) {
+        const { error } = await supabase
+          .from('follows')
+          .insert({ follower_id: currentUserId, followee_id: profileId });
+        if (error) {
+          setFollows((items) =>
+            items.filter(
+              (item) => !(item.followerId === currentUserId && item.followeeId === profileId)
+            )
+          );
+          throw error;
+        }
+      }
+    },
+    [currentUserId, follows, isBlocked, session]
+  );
+
+  const unfollow = useCallback(
+    async (profileId: ID) => {
+      const previous = follows;
+      setFollows((items) =>
+        items.filter(
+          (item) => !(item.followerId === currentUserId && item.followeeId === profileId)
+        )
+      );
+      if (supabase && session?.user) {
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', currentUserId)
+          .eq('followee_id', profileId);
+        if (error) {
+          setFollows(previous);
+          throw error;
+        }
+      }
+    },
+    [currentUserId, follows, session]
+  );
 
   const getIncomingRequests = useCallback(
     () =>
@@ -865,6 +977,7 @@ export function SocialProvider({ children }: PropsWithChildren) {
       communities,
       friendRequests,
       friendships,
+      follows,
       blocks,
       notifications: notifications.filter((notification) => notification.userId === currentUserId),
       isLoading,
@@ -874,7 +987,12 @@ export function SocialProvider({ children }: PropsWithChildren) {
       getCommunityPosts,
       getProfilePosts,
       getHomeFeed,
+      getExploreFeed,
       getFriends,
+      getFollowing,
+      isFollowing,
+      follow,
+      unfollow,
       getIncomingRequests,
       getOutgoingRequests,
       searchUsers,
@@ -908,16 +1026,21 @@ export function SocialProvider({ children }: PropsWithChildren) {
       createPost,
       currentUserId,
       deletePost,
+      follow,
+      follows,
       friendRequests,
       friendships,
       getCommunity,
       getCommunityPosts,
+      getExploreFeed,
+      getFollowing,
       getFriends,
       getHomeFeed,
       getIncomingRequests,
       getOutgoingRequests,
       getProfile,
       getProfilePosts,
+      isFollowing,
       isLoading,
       joinCommunity,
       leaveCommunity,
@@ -934,7 +1057,8 @@ export function SocialProvider({ children }: PropsWithChildren) {
       searchUsers,
       sendFriendRequest,
       setCommunityModerator,
-      toggleLike
+      toggleLike,
+      unfollow
     ]
   );
 

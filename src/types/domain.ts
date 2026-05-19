@@ -19,15 +19,26 @@ export type Profile = {
   region?: string;
   socialLinks: SocialLinks;
   favoriteHandheld?: string;
+  favoriteHandhelds: string[];
   favoriteFrontend?: string;
   favoriteSystems: string[];
   favoriteGames: string[];
+  customHandhelds: string[];
+  customFrontends: string[];
+  customSystems: string[];
+  customGames: string[];
   setupNotes?: string;
   currentGame?: string;
   currentStatus?: string;
   lastSeenAt?: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type Follow = {
+  followerId: ID;
+  followeeId: ID;
+  createdAt: string;
 };
 
 export type Comment = {
@@ -130,9 +141,14 @@ export type UpdateProfileInput = Partial<
     | 'region'
     | 'socialLinks'
     | 'favoriteHandheld'
+    | 'favoriteHandhelds'
     | 'favoriteFrontend'
     | 'favoriteSystems'
     | 'favoriteGames'
+    | 'customHandhelds'
+    | 'customFrontends'
+    | 'customSystems'
+    | 'customGames'
     | 'setupNotes'
     | 'currentGame'
     | 'currentStatus'

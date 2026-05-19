@@ -1,46 +1,45 @@
 import { router, useFocusEffect } from 'expo-router';
-import { Bell, Compass, RefreshCw, UserX } from 'lucide-react-native';
-import { useCallback, useMemo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Compass, UserX } from 'lucide-react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { StyleSheet } from 'react-native';
 
 import { PostCard } from '@/components/PostCard';
 import { BrandMark } from '@/components/BrandMark';
-import { DeviceProfileCard } from '@/components/social/DeviceProfileCard';
-import { NotificationCard } from '@/components/social/NotificationCard';
 import { UserCard } from '@/components/social/UserCard';
-import { AppText, Avatar, Badge, Button, EmptyState, GlowCard, IconButton, PressableScale, Row, Screen, Skeleton, Stack, StatPill } from '@/components/ui';
+import {
+  AppText,
+  Button,
+  EmptyState,
+  GlowCard,
+  Row,
+  Screen,
+  SegmentedTabs,
+  Skeleton,
+  Stack
+} from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
 import { colors, radius, spacing } from '@/design/tokens';
-import { getDeviceProfile } from '@/lib/devices';
+
+type FeedKey = 'fyp' | 'explore';
 
 export default function HomeScreen() {
   const { profile } = useAuth();
   const {
     getHomeFeed,
+    getExploreFeed,
     getProfile,
     getIncomingRequests,
-    getFriends,
     acceptFriendRequest,
     rejectFriendRequest,
-    notifications,
-    markNotificationsRead,
     refresh,
     isLoading
   } = usePocketData();
-  const feed = getHomeFeed();
+  const [feedTab, setFeedTab] = useState<FeedKey>('fyp');
+  const forYou = useMemo(() => getHomeFeed(), [getHomeFeed]);
+  const explore = useMemo(() => getExploreFeed(), [getExploreFeed]);
+  const feed = feedTab === 'fyp' ? forYou : explore;
   const requests = getIncomingRequests();
-  const friends = getFriends();
-  const unread = notifications.filter((notification) => !notification.readAt);
-  const device = getDeviceProfile(profile?.favoriteHandheld);
-  const activeFriends = useMemo(
-    () => friends.filter((friend) => friend.currentGame || friend.currentStatus).slice(0, 3),
-    [friends]
-  );
-  const onlineNow = useMemo(
-    () => friends.filter((friend) => Boolean(friend.currentGame)).slice(0, 12),
-    [friends]
-  );
 
   useFocusEffect(
     useCallback(() => {
@@ -50,101 +49,23 @@ export default function HomeScreen() {
 
   return (
     <Screen scroll refreshing={isLoading} onRefresh={() => void refresh()}>
-      <GlowCard tone={device.category === 'dual-screen' ? 'focus' : 'cyan'} style={styles.commandBar}>
-        <Row style={styles.heroTop}>
-          <BrandMark size={42} />
-          <Stack gap={spacing.xs} style={styles.heroCopy}>
-            <Badge label={device.badgeLabel} tone={device.category === 'dual-screen' ? 'focus' : 'cyan'} />
-            <AppText variant="screenTitle">PocketNet</AppText>
-            <AppText color={colors.textSecondary}>
-              A social home tuned for {device.name}: {device.layoutHint.toLowerCase()}
-            </AppText>
-          </Stack>
-          <Stack gap={spacing.xs}>
-            <IconButton
-              icon={Bell}
-              label={unread.length ? `${unread.length} unread notifications` : 'Open notifications'}
-              tone={unread.length ? 'warning' : 'neutral'}
-              onPress={() => router.push('/notifications')}
-            />
-            <Button label="Sync" icon={RefreshCw} compact variant="secondary" onPress={() => void refresh()} />
-          </Stack>
-        </Row>
-        <Row style={styles.stats}>
-          <StatPill label="Feed" value={feed.length} />
-          <StatPill label="Friends" value={friends.length} />
-          <StatPill label="Unread" value={unread.length} />
-        </Row>
-      </GlowCard>
+      <Stack gap={spacing.sm} style={styles.heroBlock}>
+        <BrandMark size={80} />
+        <AppText variant="display" style={styles.wordmark}>
+          PocketNet
+        </AppText>
+      </Stack>
 
-      <DeviceProfileCard deviceName={profile?.favoriteHandheld} />
+      <SegmentedTabs
+        value={feedTab}
+        onChange={(value) => setFeedTab(value as FeedKey)}
+        tabs={[
+          { label: 'For You Page', value: 'fyp' },
+          { label: 'Explore', value: 'explore' }
+        ]}
+      />
 
-      {onlineNow.length ? (
-        <Stack gap={spacing.sm}>
-          <Row style={styles.sectionHeader}>
-            <Stack gap={2}>
-              <AppText variant="sectionTitle">Online now</AppText>
-              <AppText variant="metadata" color={colors.textMuted}>
-                Friends with a live game status.
-              </AppText>
-            </Stack>
-            <Badge label={`${onlineNow.length} live`} tone="lime" />
-          </Row>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.onlineRow}
-          >
-            {onlineNow.map((friend) => (
-              <PressableScale
-                key={friend.id}
-                onPress={() => router.push(`/user/${friend.id}`)}
-                style={styles.onlineChip}
-              >
-                <View style={styles.onlineAvatar}>
-                  <Avatar
-                    label={friend.displayName}
-                    uri={friend.avatarUrl}
-                    size={54}
-                    status="online"
-                  />
-                </View>
-                <AppText variant="metadata" numberOfLines={1} style={styles.onlineName}>
-                  {friend.displayName.split(' ')[0]}
-                </AppText>
-                <AppText
-                  variant="metadata"
-                  color={colors.online}
-                  numberOfLines={1}
-                  style={styles.onlineGame}
-                >
-                  {friend.currentGame}
-                </AppText>
-              </PressableScale>
-            ))}
-          </ScrollView>
-        </Stack>
-      ) : null}
-
-      {unread.length ? (
-        <Stack gap={spacing.sm}>
-          <Row style={styles.sectionHeader}>
-            <Row>
-              <Bell color={colors.warning} size={18} />
-              <AppText variant="sectionTitle">Notifications</AppText>
-            </Row>
-            <Row>
-              <Button label="Open all" compact variant="ghost" onPress={() => router.push('/notifications')} />
-              <Button label="Mark read" compact variant="ghost" onPress={() => void markNotificationsRead()} />
-            </Row>
-          </Row>
-          {unread.slice(0, 3).map((notification) => (
-            <NotificationCard key={notification.id} notification={notification} />
-          ))}
-        </Stack>
-      ) : null}
-
-      {requests.length ? (
+      {feedTab === 'fyp' && requests.length ? (
         <Stack gap={spacing.sm}>
           <AppText variant="sectionTitle">Friend Requests</AppText>
           {requests.map((request) => {
@@ -171,34 +92,6 @@ export default function HomeScreen() {
         </Stack>
       ) : null}
 
-      {activeFriends.length ? (
-        <Stack gap={spacing.sm}>
-          <Row style={styles.sectionHeader}>
-            <AppText variant="sectionTitle">Now Playing</AppText>
-            <Badge label="Live manual status" tone="lime" />
-          </Row>
-          {activeFriends.map((friend) => (
-            <UserCard
-              key={friend.id}
-              profile={friend}
-              actionLabel="View"
-              onOpen={() => router.push(`/user/${friend.id}`)}
-              onAction={() => router.push(`/user/${friend.id}`)}
-            />
-          ))}
-        </Stack>
-      ) : null}
-
-      <Row style={styles.sectionHeader}>
-        <Stack gap={2}>
-          <AppText variant="sectionTitle">Home Feed</AppText>
-          <AppText variant="metadata" color={colors.textMuted}>
-            Friends and joined communities, newest first.
-          </AppText>
-        </Stack>
-        <Button label="Post" compact onPress={() => router.push('/(tabs)/create')} />
-      </Row>
-
       {isLoading && !feed.length ? (
         <Stack>
           {[0, 1, 2].map((item) => (
@@ -216,10 +109,10 @@ export default function HomeScreen() {
         </Stack>
       ) : feed.length ? (
         feed.map((post) => <PostCard key={post.id} post={post} />)
-      ) : (
+      ) : feedTab === 'fyp' ? (
         <EmptyState
-          title={profile ? 'Your feed is waiting for a first spark' : 'PocketNet is ready when you are'}
-          body="Add friends, join communities, or share a setup note to turn this into your handheld activity stream."
+          title={profile ? 'Your For You Page is waiting' : 'PocketNet is ready when you are'}
+          body="Add friends, follow players, or share your first post — their updates land here."
           icon={Compass}
           action={
             <Row style={styles.emptyActions}>
@@ -228,58 +121,32 @@ export default function HomeScreen() {
             </Row>
           }
         />
+      ) : (
+        <EmptyState
+          title="Nothing new to explore yet"
+          body="Pull to refresh, or check back after other players post."
+          icon={Compass}
+        />
       )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  commandBar: {
-    minHeight: 148,
-    position: 'relative',
-    borderColor: colors.borderStrong
+  heroBlock: {
+    alignItems: 'center',
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs
   },
-  heroTop: {
-    alignItems: 'flex-start'
-  },
-  heroCopy: {
-    flex: 1,
-    minWidth: 0
-  },
-  stats: {
-    marginTop: spacing.sm
-  },
-  sectionHeader: {
-    justifyContent: 'space-between',
-    alignItems: 'center'
+  wordmark: {
+    color: colors.textPrimary,
+    textAlign: 'center',
+    letterSpacing: 1.2
   },
   skeletonCopy: {
     flex: 1
   },
   emptyActions: {
     flexWrap: 'wrap'
-  },
-  onlineRow: {
-    gap: spacing.sm,
-    paddingVertical: 2,
-    paddingRight: spacing.sm
-  },
-  onlineChip: {
-    width: 96,
-    alignItems: 'center',
-    padding: spacing.xs,
-    gap: 4
-  },
-  onlineAvatar: {
-    alignItems: 'center'
-  },
-  onlineName: {
-    color: colors.textPrimary,
-    textAlign: 'center',
-    width: '100%'
-  },
-  onlineGame: {
-    textAlign: 'center',
-    width: '100%'
   }
 });

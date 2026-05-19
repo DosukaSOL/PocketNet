@@ -17,9 +17,13 @@ export default function DiscoverScreen() {
     searchUsers,
     searchCommunities,
     sendFriendRequest,
+    acceptFriendRequest,
     joinCommunity,
     leaveCommunity,
     createCommunity,
+    getFriends,
+    getIncomingRequests,
+    getOutgoingRequests,
     refresh
   } = usePocketData();
   const [query, setQuery] = useState('');
@@ -27,6 +31,14 @@ export default function DiscoverScreen() {
   const [communityDescription, setCommunityDescription] = useState('');
   const [creating, setCreating] = useState(false);
   const users = useMemo(() => searchUsers(query).slice(0, 8), [query, searchUsers]);
+  const friendIds = useMemo(() => new Set(getFriends().map((f) => f.id)), [getFriends]);
+  const outgoing = useMemo(() => getOutgoingRequests(), [getOutgoingRequests]);
+  const incoming = useMemo(() => getIncomingRequests(), [getIncomingRequests]);
+  const outgoingTo = useMemo(() => new Set(outgoing.map((r) => r.toUserId)), [outgoing]);
+  const incomingFrom = useMemo(
+    () => new Map(incoming.map((r) => [r.fromUserId, r.id])),
+    [incoming]
+  );
   const communities = useMemo(() => searchCommunities(query), [query, searchCommunities]);
   const featuredCommunities = communities.slice(0, 2);
   const otherCommunities = communities.slice(2);
@@ -88,15 +100,41 @@ export default function DiscoverScreen() {
       </Row>
 
       {users.length ? (
-        users.map((user) => (
-          <UserCard
-            key={user.id}
-            profile={user}
-            actionLabel={user.id === profile?.id ? 'You' : 'Add'}
-            onOpen={() => router.push(`/user/${user.id}`)}
-            onAction={user.id === profile?.id ? undefined : () => void sendFriendRequest(user.id)}
-          />
-        ))
+        users.map((user) => {
+          const isSelf = user.id === profile?.id;
+          const isFriend = friendIds.has(user.id);
+          const hasOutgoing = outgoingTo.has(user.id);
+          const incomingRequestId = incomingFrom.get(user.id);
+          let actionLabel: string;
+          let actionDisabled = false;
+          let onAction: (() => void) | undefined;
+          if (isSelf) {
+            actionLabel = 'You';
+            actionDisabled = true;
+          } else if (isFriend) {
+            actionLabel = 'Friend';
+            actionDisabled = true;
+          } else if (incomingRequestId) {
+            actionLabel = 'Accept';
+            onAction = () => void acceptFriendRequest(incomingRequestId);
+          } else if (hasOutgoing) {
+            actionLabel = 'Requested';
+            actionDisabled = true;
+          } else {
+            actionLabel = 'Add';
+            onAction = () => void sendFriendRequest(user.id);
+          }
+          return (
+            <UserCard
+              key={user.id}
+              profile={user}
+              actionLabel={actionLabel}
+              actionDisabled={actionDisabled}
+              onOpen={() => router.push(`/user/${user.id}`)}
+              onAction={onAction}
+            />
+          );
+        })
       ) : (
         <EmptyState
           title="No players found"

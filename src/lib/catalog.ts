@@ -1,4 +1,6 @@
-export { HANDHELDS } from '@/lib/devices';
+import { HANDHELDS as BASE_HANDHELDS } from '@/lib/devices';
+
+export const HANDHELDS = [...BASE_HANDHELDS, 'Other'];
 
 export const FRONTENDS = [
   'Cocoon',
@@ -25,7 +27,8 @@ export const SYSTEMS = [
   'Wii',
   'Saturn',
   'Switch-style indies',
-  'Cloud gaming'
+  'Cloud gaming',
+  'Other'
 ];
 
 export const SAMPLE_GAMES = [
@@ -38,7 +41,8 @@ export const SAMPLE_GAMES = [
   'Stardew Valley',
   'Dead Cells',
   'Balatro',
-  'Castlevania: Aria of Sorrow'
+  'Castlevania: Aria of Sorrow',
+  'Other'
 ];
 
 export const REGIONS = [

@@ -9,14 +9,14 @@ import { PostCard } from '@/components/PostCard';
 import { ProfileHeader, type ProfileTab } from '@/components/ProfileHeader';
 import { SetupCard } from '@/components/social/SetupCard';
 import { UserCard } from '@/components/social/UserCard';
-import { AppText, Button, EmptyState, Row, Screen, Stack } from '@/components/ui';
+import { AppText, Button, EmptyState, Row, Screen, Stack, StatPill } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
 import { colors, spacing } from '@/design/tokens';
 
 export default function ProfileScreen() {
   const { profile } = useAuth();
-  const { getProfilePosts, getFriends, communities, joinCommunity, leaveCommunity } = usePocketData();
+  const { getProfilePosts, getFriends, communities, notifications, joinCommunity, leaveCommunity } = usePocketData();
   const [tab, setTab] = useState<ProfileTab>('posts');
 
   if (!profile) {
@@ -34,6 +34,7 @@ export default function ProfileScreen() {
   const posts = getProfilePosts(profile.id);
   const friends = getFriends();
   const memberCommunities = communities.filter((community) => community.memberIds.includes(profile.id));
+  const unread = notifications.filter((notification) => !notification.readAt);
 
   return (
     <Screen scroll>
@@ -44,6 +45,12 @@ export default function ProfileScreen() {
           <AppText variant="screenTitle">Profile</AppText>
         </Stack>
         <Button label="Settings" icon={Settings} compact variant="secondary" onPress={() => router.push('/settings')} />
+      </Row>
+
+      <Row style={styles.stats}>
+        <StatPill label="Feed" value={posts.length} />
+        <StatPill label="Friends" value={friends.length} />
+        <StatPill label="Unread" value={unread.length} />
       </Row>
 
       <ProfileHeader
@@ -135,6 +142,9 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 1,
     minWidth: 0
+  },
+  stats: {
+    flexWrap: 'wrap'
   },
   sectionHeader: {
     justifyContent: 'space-between',

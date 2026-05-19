@@ -14,6 +14,7 @@ const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 function inferContentType(uri: string, fallbackExt: string): { contentType: string; extension: string } {
   const lower = uri.split('?')[0].toLowerCase();
   if (lower.endsWith('.png')) return { contentType: 'image/png', extension: 'png' };
+  if (lower.endsWith('.gif')) return { contentType: 'image/gif', extension: 'gif' };
   if (lower.endsWith('.webp')) return { contentType: 'image/webp', extension: 'webp' };
   if (lower.endsWith('.heic') || lower.endsWith('.heif')) {
     return { contentType: 'image/heic', extension: 'heic' };
@@ -45,6 +46,38 @@ export async function pickImage(): Promise<PickedImage | null> {
     uri: result.assets[0].uri,
     width: result.assets[0].width,
     height: result.assets[0].height
+  };
+}
+
+export async function pickGif(): Promise<PickedImage | null> {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+  if (!permission.granted) {
+    throw new Error('Photo library permission is required to choose a GIF.');
+  }
+
+  // No editing — cropping destroys animation. Pull anything and we'll filter.
+  const result = await ImagePicker.launchImageLibraryAsync({
+    allowsEditing: false,
+    quality: 1,
+    mediaTypes: ImagePicker.MediaTypeOptions.All
+  });
+
+  if (result.canceled || !result.assets[0]) {
+    return null;
+  }
+
+  const asset = result.assets[0];
+  const uri = asset.uri.toLowerCase();
+  const mime = (asset.mimeType || '').toLowerCase();
+  if (!uri.endsWith('.gif') && mime !== 'image/gif') {
+    throw new Error('That file is not a GIF. Pick an animated .gif.');
+  }
+
+  return {
+    uri: asset.uri,
+    width: asset.width,
+    height: asset.height
   };
 }
 

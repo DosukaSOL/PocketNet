@@ -5,6 +5,7 @@ import { StyleSheet } from 'react-native';
 
 import { AppText, Badge, Button, ErrorBanner, GlowCard, Row, Screen, Stack, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { supabase } from '@/lib/supabase';
 import { colors, spacing } from '@/design/tokens';
 
 export default function SignupScreen() {
@@ -21,7 +22,19 @@ export default function SignupScreen() {
       setError(undefined);
       setNotice(undefined);
       setLoading(true);
-      await signUp(email.trim(), password, username.trim().toLowerCase());
+      const desiredUsername = username.trim().toLowerCase();
+      if (supabase && desiredUsername) {
+        const { data: available, error: rpcError } = await supabase.rpc('is_username_available', {
+          p_username: desiredUsername
+        });
+        if (rpcError) {
+          throw new Error(rpcError.message);
+        }
+        if (available === false) {
+          throw new Error('Username already taken, try a different name');
+        }
+      }
+      await signUp(email.trim(), password, desiredUsername);
       setNotice('Check your email, confirm your account, then log in to finish setup.');
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Try again.');

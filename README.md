@@ -15,7 +15,7 @@
     <img src="https://img.shields.io/badge/build-Expo%20SDK%2055-000020?style=for-the-badge&logo=expo&logoColor=white" alt="Expo SDK 55">
     <img src="https://img.shields.io/badge/backend-Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
     <img src="https://img.shields.io/badge/release-APK%20first-4D7CFF?style=for-the-badge" alt="APK first">
-    <img src="https://img.shields.io/badge/status-v1.0%20stable-7C3AED?style=for-the-badge" alt="v1.0 stable">
+    <img src="https://img.shields.io/badge/status-v1.1%20stable-7C3AED?style=for-the-badge" alt="v1.1 stable">
   </p>
 
   <p>
@@ -46,7 +46,19 @@ PocketNet is standalone and is not affiliated with AYN, Cocoon, Daijisho, ES-DE,
 
 ## Beta Status — What Works & What Doesn't
 
-PocketNet **v1.0** is the first stable release. This is an honest snapshot for anyone downloading the APK.
+PocketNet **v1.1** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+
+### What's new in v1.1
+
+- **For You Page + Explore** — the Home tab now opens on a centered PocketNet wordmark with a segmented control. **For You Page** = you + friends + followed players + your communities. **Explore** = everyone else.
+- **Follow system** — follow players without friending them. New `follows` table with RLS.
+- **"Other" custom inputs** — every onboarding picker (handhelds, frontends, systems, games) has an Other chip that reveals a free-text field. Custom entries persist into dedicated `custom_*` columns.
+- **Multi-handheld picker** — pick every device you actually use.
+- **Branded "Posted" toast** — cyan→purple gradient pill that fades after 1.5s; no more Alert dialogs after posting.
+- **GIF in the composer** — a GIF button next to Image; uploads keep the `image/gif` MIME so animation survives.
+- **Profile stats** moved off Home onto the Profile tab.
+- **Discover Add button** now flips through **Add → Requested → Friend** (and shows **Accept** when the other side requested you first).
+- **Username uniqueness** error is now the friendly "Username already taken, try a different name" surfaced before signup ever talks to Supabase Auth.
 
 ### Working
 

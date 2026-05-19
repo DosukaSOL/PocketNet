@@ -10,12 +10,14 @@ import type { Profile } from '@/types/domain';
 export function UserCard({
   profile,
   actionLabel = 'Add',
+  actionDisabled = false,
   onAction,
   onOpen,
   secondaryAction
 }: {
   profile: Profile;
   actionLabel?: string;
+  actionDisabled?: boolean;
   onAction?: () => void;
   onOpen?: () => void;
   secondaryAction?: React.ReactNode;
@@ -52,8 +54,15 @@ export function UserCard({
             ) : null}
           </Stack>
           <View style={styles.actions}>
-            {onAction ? (
-              <Button label={actionLabel} icon={UserPlus} compact variant={actionLabel === 'Add' ? 'primary' : 'secondary'} onPress={onAction} />
+            {onAction || actionDisabled ? (
+              <Button
+                label={actionLabel}
+                icon={UserPlus}
+                compact
+                disabled={actionDisabled}
+                variant={actionLabel === 'Add' ? 'primary' : 'secondary'}
+                onPress={onAction}
+              />
             ) : null}
             {secondaryAction}
           </View>

@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.1.0 - For You + Explore + Follows
+
+v1.1 turns the Home tab into a real social surface. The command-bar card is gone, the wordmark is front and center, and the feed splits into two views: the people you actually care about (For You Page) and everyone else (Explore).
+
+### New features
+
+- **For You Page + Explore feeds.** The Home tab now opens on a centered PocketNet wordmark with a big BrandMark above it and a segmented control that flips between **For You Page** (you + friends + people you follow + your joined communities) and **Explore** (everyone else, no community-only posts). Pull-to-refresh works in both.
+- **Follow system.** Follow players to see their posts on your For You Page without being friends. New `follows` table, RLS-locked to `auth.uid()` for writes, with optimistic `follow()` / `unfollow()` in the social provider.
+- **"Other" custom inputs in onboarding.** Every catalog picker (handhelds, frontends, systems, games) now has an **Other** chip that reveals a free-text field. Custom entries persist into dedicated `custom_*` columns on `profiles` so we never lose the long tail of names the catalog doesn't ship.
+- **Multi-handheld picker.** Players can pick every handheld they actually use; the first selection still acts as the "primary" for device-aware UI and we keep the full list in `favorite_handhelds text[]`.
+- **Branded "Posted" toast.** Posting now fires a cyan→purple gradient toast that fades after 1.5s instead of a generic Alert dialog.
+- **GIF in the composer.** A new GIF button in the Status Composer opens the gallery, validates the picked asset is actually a `.gif`, and uploads it with the correct `image/gif` MIME type so animation survives.
+- **Profile stats moved.** Feed / Friends / Unread now live on the Profile tab where they belong; Home is just the feed.
+
+### Fixes
+
+- **Discover "Add" button now reflects state.** Tapping Add on a player flips to **Requested** immediately (optimistic), and to **Friend** once the request is accepted. **Accept** is shown when the other side requested you first.
+- **Username uniqueness has a friendly error.** Signup now pre-checks the username via a SECURITY DEFINER RPC and surfaces "Username already taken, try a different name" before hitting Supabase Auth.
+
+### Security
+
+- `follows` is RLS-locked: anyone authenticated can read the graph, but inserts require `follower_id = auth.uid()` and a not-blocked check; deletes are scoped to the row owner.
+- `is_username_available(text)` is a SECURITY DEFINER function granted only to `anon` and `authenticated`; it returns a boolean and never leaks any other profile data.
+- New `custom_*` columns on `profiles` are `not null default '{}'::text[]` so they can't break existing reads.
+- `npm run qa` (typecheck + lint + jest + secret scan) is clean.
+
+### Versioning
+
+- Bumped `version` → `1.1.0` and Android `versionCode` → `11`.
+
 ## 1.0.0 - First Stable Release
 
 PocketNet 1.0 is the first build that's been through end-to-end UX, security, and release-engineering hardening. Everything below was added or fixed specifically for v1.0.

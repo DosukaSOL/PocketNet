@@ -15,7 +15,7 @@ import { useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { ChipPicker } from '@/components/ChipPicker';
-import { DeviceProfileCard, DeviceSelect } from '@/components/social/DeviceProfileCard';
+import { DeviceProfileCard } from '@/components/social/DeviceProfileCard';
 import {
   AppText,
   Badge,
@@ -29,7 +29,7 @@ import {
 } from '@/components/ui';
 import { colors, radius, spacing } from '@/design/tokens';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { FRONTENDS, SAMPLE_GAMES, SYSTEMS } from '@/lib/catalog';
+import { FRONTENDS, HANDHELDS, SAMPLE_GAMES, SYSTEMS } from '@/lib/catalog';
 import { pickImage, uploadImage } from '@/lib/media';
 
 type StepKey = 'avatar' | 'banner' | 'about' | 'device' | 'systems' | 'socials' | 'preview';
@@ -52,10 +52,23 @@ export default function OnboardingScreen() {
   const [avatarUri, setAvatarUri] = useState<string | undefined>(profile?.avatarUrl);
   const [bannerUri, setBannerUri] = useState<string | undefined>(profile?.bannerUrl);
   const [bio, setBio] = useState(profile?.bio ?? '');
-  const [favoriteHandheld, setFavoriteHandheld] = useState(profile?.favoriteHandheld ?? 'AYN Thor');
+  const initialHandhelds = profile?.favoriteHandhelds?.length
+    ? profile.favoriteHandhelds
+    : profile?.favoriteHandheld
+      ? [profile.favoriteHandheld]
+      : ['AYN Thor'];
+  const [favoriteHandhelds, setFavoriteHandhelds] = useState<string[]>(initialHandhelds);
+  const [customHandhelds, setCustomHandhelds] = useState(
+    profile?.customHandhelds?.join(', ') ?? ''
+  );
   const [favoriteFrontend, setFavoriteFrontend] = useState(profile?.favoriteFrontend ?? 'Cocoon');
+  const [customFrontends, setCustomFrontends] = useState(
+    profile?.customFrontends?.join(', ') ?? ''
+  );
   const [favoriteSystems, setFavoriteSystems] = useState<string[]>(profile?.favoriteSystems ?? []);
+  const [customSystems, setCustomSystems] = useState(profile?.customSystems?.join(', ') ?? '');
   const [favoriteGames, setFavoriteGames] = useState<string[]>(profile?.favoriteGames ?? []);
+  const [customGames, setCustomGames] = useState(profile?.customGames?.join(', ') ?? '');
   const [setupNotes, setSetupNotes] = useState(profile?.setupNotes ?? '');
   const [twitter, setTwitter] = useState(profile?.socialLinks.twitter ?? '');
   const [discord, setDiscord] = useState(profile?.socialLinks.discord ?? '');
@@ -108,14 +121,32 @@ export default function OnboardingScreen() {
         ? await uploadImage({ bucket: 'banners', userId: profile.id, uri: bannerUri! })
         : bannerUri;
 
+      const handheldList = favoriteHandhelds.filter((item) => item !== 'Other');
+      const customHandheldList = parseCustomList(customHandhelds);
+      const customFrontendList = favoriteFrontend === 'Other' ? parseCustomList(customFrontends) : [];
+      const customSystemList = favoriteSystems.includes('Other') ? parseCustomList(customSystems) : [];
+      const customGameList = favoriteGames.includes('Other') ? parseCustomList(customGames) : [];
+      const primaryHandheld = handheldList[0] ?? customHandheldList[0];
+
       await patchProfile({
         avatarUri: uploadedAvatar,
         bannerUri: uploadedBanner,
         bio: bio.trim() || undefined,
-        favoriteHandheld,
-        favoriteFrontend,
-        favoriteSystems,
-        favoriteGames,
+        favoriteHandheld: primaryHandheld,
+        favoriteHandhelds: [...handheldList, ...customHandheldList],
+        favoriteFrontend: favoriteFrontend === 'Other' ? customFrontendList[0] : favoriteFrontend,
+        favoriteSystems: [
+          ...favoriteSystems.filter((item) => item !== 'Other'),
+          ...customSystemList
+        ],
+        favoriteGames: [
+          ...favoriteGames.filter((item) => item !== 'Other'),
+          ...customGameList
+        ],
+        customHandhelds: customHandheldList,
+        customFrontends: customFrontendList,
+        customSystems: customSystemList,
+        customGames: customGameList,
         setupNotes: setupNotes.trim() || undefined,
         socialLinks: {
           ...(twitter.trim() ? { twitter: twitter.trim() } : {}),
@@ -218,14 +249,32 @@ export default function OnboardingScreen() {
             <Row>
               <Gamepad2 color={colors.accentCyan} size={20} />
               <Stack gap={2}>
-                <AppText variant="sectionTitle">Daily-driver handheld</AppText>
+                <AppText variant="sectionTitle">Your handhelds</AppText>
                 <AppText variant="metadata" color={colors.textMuted}>
-                  PocketNet adapts dashboards and quick actions from this choice.
+                  Pick every device you play on — PocketNet tunes the feed for all of them.
                 </AppText>
               </Stack>
             </Row>
-            <DeviceSelect value={favoriteHandheld} onChange={setFavoriteHandheld} />
-            <DeviceProfileCard deviceName={favoriteHandheld} />
+            <ChipPicker
+              options={HANDHELDS}
+              value={favoriteHandhelds}
+              multi
+              onChange={(value) => setFavoriteHandhelds(value as string[])}
+            />
+            {favoriteHandhelds.includes('Other') ? (
+              <TextField
+                label="Other handhelds"
+                value={customHandhelds}
+                onChangeText={setCustomHandhelds}
+                placeholder="Comma-separated names"
+                autoCapitalize="words"
+              />
+            ) : null}
+            {favoriteHandhelds.filter((item) => item !== 'Other')[0] ? (
+              <DeviceProfileCard
+                deviceName={favoriteHandhelds.filter((item) => item !== 'Other')[0]}
+              />
+            ) : null}
           </GlowCard>
           <GlowCard tone="purple">
             <Row>
@@ -237,6 +286,15 @@ export default function OnboardingScreen() {
               value={favoriteFrontend}
               onChange={(value) => setFavoriteFrontend(String(value))}
             />
+            {favoriteFrontend === 'Other' ? (
+              <TextField
+                label="Other frontend"
+                value={customFrontends}
+                onChangeText={setCustomFrontends}
+                placeholder="Frontend name"
+                autoCapitalize="words"
+              />
+            ) : null}
           </GlowCard>
         </Stack>
       ) : null}
@@ -251,6 +309,15 @@ export default function OnboardingScreen() {
               multi
               onChange={(value) => setFavoriteSystems(value as string[])}
             />
+            {favoriteSystems.includes('Other') ? (
+              <TextField
+                label="Other systems"
+                value={customSystems}
+                onChangeText={setCustomSystems}
+                placeholder="Comma-separated systems"
+                autoCapitalize="words"
+              />
+            ) : null}
           </GlowCard>
           <GlowCard tone="purple">
             <AppText variant="sectionTitle">Favorite games</AppText>
@@ -260,6 +327,15 @@ export default function OnboardingScreen() {
               multi
               onChange={(value) => setFavoriteGames(value as string[])}
             />
+            {favoriteGames.includes('Other') ? (
+              <TextField
+                label="Other games"
+                value={customGames}
+                onChangeText={setCustomGames}
+                placeholder="Comma-separated games"
+                autoCapitalize="words"
+              />
+            ) : null}
           </GlowCard>
           <GlowCard tone="focus">
             <TextArea
@@ -314,11 +390,28 @@ export default function OnboardingScreen() {
             </Row>
             {bio ? <AppText color={colors.textSecondary}>{bio}</AppText> : null}
             <Row style={{ flexWrap: 'wrap', gap: 6 }}>
-              {favoriteHandheld ? <Badge label={favoriteHandheld} tone="cyan" /> : null}
-              {favoriteFrontend ? <Badge label={favoriteFrontend} tone="purple" /> : null}
-              {favoriteSystems.slice(0, 4).map((system) => (
-                <Badge key={system} label={system} tone="focus" />
+              {favoriteHandhelds
+                .filter((item) => item !== 'Other')
+                .map((handheld) => (
+                  <Badge key={handheld} label={handheld} tone="cyan" />
+                ))}
+              {parseCustomList(customHandhelds).map((handheld) => (
+                <Badge key={`custom-${handheld}`} label={handheld} tone="cyan" />
               ))}
+              {favoriteFrontend && favoriteFrontend !== 'Other' ? (
+                <Badge label={favoriteFrontend} tone="purple" />
+              ) : null}
+              {favoriteFrontend === 'Other'
+                ? parseCustomList(customFrontends).map((frontend) => (
+                    <Badge key={`fe-${frontend}`} label={frontend} tone="purple" />
+                  ))
+                : null}
+              {favoriteSystems
+                .filter((item) => item !== 'Other')
+                .slice(0, 4)
+                .map((system) => (
+                  <Badge key={system} label={system} tone="focus" />
+                ))}
             </Row>
           </Stack>
         </GlowCard>
@@ -417,3 +510,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   }
 });
+
+function parseCustomList(value: string): string[] {
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}

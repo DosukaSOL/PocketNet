@@ -1,4 +1,4 @@
-import { ImagePlus, Send } from 'lucide-react-native';
+import { ImagePlus, Send, Sparkles } from 'lucide-react-native';
 import { StyleSheet } from 'react-native';
 
 import { ImagePreview } from '@/components/ui/ImagePreview';
@@ -13,6 +13,7 @@ export function StatusComposer({
   onChangeText,
   imageUri,
   onChooseImage,
+  onChooseGif,
   onRemoveImage,
   onSubmit,
   loading = false,
@@ -24,6 +25,7 @@ export function StatusComposer({
   onChangeText: (value: string) => void;
   imageUri?: string;
   onChooseImage?: () => void;
+  onChooseGif?: () => void;
   onRemoveImage?: () => void;
   onSubmit: () => void;
   loading?: boolean;
@@ -49,6 +51,9 @@ export function StatusComposer({
       {imageUri ? <ImagePreview uri={imageUri} onRemove={onRemoveImage} /> : null}
       <Row>
         <Button label="Image" icon={ImagePlus} variant="secondary" onPress={onChooseImage} />
+        {onChooseGif ? (
+          <Button label="GIF" icon={Sparkles} variant="secondary" onPress={onChooseGif} />
+        ) : null}
         <Button label="Post" icon={Send} loading={loading} disabled={disabled} onPress={onSubmit} />
       </Row>
       <AppText variant="metadata" color={colors.textMuted}>

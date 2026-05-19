@@ -6,16 +6,18 @@ import { Alert, StyleSheet, Text, View } from 'react-native';
 import { BrandMark } from '@/components/BrandMark';
 import { StatusComposer } from '@/components/social/StatusComposer';
 import { AppText, Badge, Button, GlowCard, PressableScale, Row, Screen, Stack } from '@/components/ui';
+import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
 import { useThemeChoice } from '@/features/theme/ThemeProvider';
-import { pickImage } from '@/lib/media';
+import { pickGif, pickImage } from '@/lib/media';
 import { colors, radius, spacing } from '@/design/tokens';
 
 export default function CreateScreen() {
   const { profile } = useAuth();
   const { communities, createPost } = usePocketData();
   const { layout } = useThemeChoice();
+  const { showToast } = useToast();
   const [body, setBody] = useState('');
   const [communityId, setCommunityId] = useState<string | undefined>();
   const [imageUri, setImageUri] = useState<string | undefined>();
@@ -35,6 +37,17 @@ export default function CreateScreen() {
     }
   }
 
+  async function chooseGif() {
+    try {
+      const gif = await pickGif();
+      if (gif) {
+        setImageUri(gif.uri);
+      }
+    } catch (error) {
+      Alert.alert('Could not choose GIF', error instanceof Error ? error.message : 'Try again.');
+    }
+  }
+
   async function publish() {
     try {
       setLoading(true);
@@ -42,7 +55,7 @@ export default function CreateScreen() {
       setBody('');
       setImageUri(undefined);
       setCommunityId(undefined);
-      Alert.alert('Posted', 'Your PocketNet update is live.');
+      showToast('Posted');
       router.push('/(tabs)/home');
     } catch (error) {
       Alert.alert('Could not post', error instanceof Error ? error.message : 'Try again.');
@@ -58,6 +71,7 @@ export default function CreateScreen() {
       onChangeText={setBody}
       imageUri={imageUri}
       onChooseImage={() => void chooseImage()}
+      onChooseGif={() => void chooseGif()}
       onRemoveImage={() => setImageUri(undefined)}
       onSubmit={() => void publish()}
       loading={loading}
