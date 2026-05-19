@@ -15,6 +15,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText, Avatar, Badge, Button, GlowCard, Row, SegmentedTabs, Stack } from '@/components/ui';
 import { DeviceBadge, FrontendBadge } from '@/components/device';
 import { ProfileBadgeStrip } from '@/components/social/ProfileBadgeStrip';
+import { LevelChip } from '@/components/social/LevelChip';
+import { AnimatedCardBorder } from '@/components/social/AnimatedCardBorder';
 import { ProfileSocialLinks } from '@/components/social/ProfileSocialLinks';
 import { colors, gradients, radius, shadows, spacing } from '@/design/tokens';
 import { isDualScreenDevice } from '@/lib/devices';
@@ -50,7 +52,9 @@ export function ProfileHeader({
   onFriend,
   onAccept,
   onBlock,
-  onReport
+  onReport,
+  isFollowing,
+  onFollow
 }: {
   profile: Profile;
   isCurrentUser?: boolean;
@@ -71,6 +75,8 @@ export function ProfileHeader({
   onAccept?: () => void;
   onBlock?: () => void;
   onReport?: () => void;
+  isFollowing?: boolean;
+  onFollow?: () => void;
 }) {
   const dualScreen = isDualScreenDevice(profile.favoriteHandheld);
   const actionLabel = hasIncomingRequest
@@ -83,7 +89,8 @@ export function ProfileHeader({
 
   return (
     <Stack gap={spacing.md}>
-      <GlowCard tone={dualScreen ? 'focus' : 'cyan'} style={styles.wrap}>
+      <AnimatedCardBorder preset={profile.cardBorder} customBorderUrl={profile.customBorderUrl}>
+        <GlowCard tone={dualScreen ? 'focus' : 'cyan'} style={styles.wrap}>
         <View style={styles.banner}>
           {profile.bannerUrl ? (
             <Image source={{ uri: profile.bannerUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
@@ -108,6 +115,7 @@ export function ProfileHeader({
               <AppText variant="heroTitle" numberOfLines={1} style={styles.name}>
                 {profile.displayName}
               </AppText>
+              {profile.level ? <LevelChip level={profile.level} /> : null}
               {profile.isPrivate ? <Badge label="Private" tone="warning" compact /> : null}
             </Row>
             <AppText variant="caption" color={colors.textMuted}>
@@ -187,11 +195,20 @@ export function ProfileHeader({
           {isCurrentUser ? (
             <Button label="Edit profile" variant="secondary" onPress={onEdit} />
           ) : (
-            <Button
-              label={actionLabel}
-              variant={isFriend || hasOutgoingRequest ? 'secondary' : 'primary'}
-              onPress={hasIncomingRequest ? onAccept : onFriend}
-            />
+            <>
+              <Button
+                label={actionLabel}
+                variant={isFriend || hasOutgoingRequest ? 'secondary' : 'primary'}
+                onPress={hasIncomingRequest ? onAccept : onFriend}
+              />
+              {onFollow ? (
+                <Button
+                  label={isFollowing ? 'Following' : 'Follow'}
+                  variant={isFollowing ? 'secondary' : 'primary'}
+                  onPress={onFollow}
+                />
+              ) : null}
+            </>
           )}
           {!isCurrentUser ? (
             <>
@@ -201,6 +218,7 @@ export function ProfileHeader({
           ) : null}
         </Row>
       </GlowCard>
+      </AnimatedCardBorder>
 
       {activeTab && onTabChange ? (
         <SegmentedTabs value={activeTab} onChange={onTabChange} tabs={PROFILE_TABS} />
@@ -266,7 +284,8 @@ const styles = StyleSheet.create({
     gap: spacing.md
   },
   avatarLift: {
-    marginTop: -spacing.xxxl
+    marginTop: -spacing.xxxl,
+    position: 'relative'
   },
   nameBlock: {
     flex: 1,

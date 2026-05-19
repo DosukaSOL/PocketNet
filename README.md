@@ -46,7 +46,19 @@ PocketNet is standalone and is not affiliated with AYN, Cocoon, Daijisho, ES-DE,
 
 ## Beta Status — What Works & What Doesn't
 
-PocketNet **v1.3.1** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+PocketNet **v1.3.2** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+
+### What's new in v1.3.2
+
+- **Comment reply threads.** Tap Reply on any comment to start a thread. The original commenter is highlighted on the reply, and you get a notification when someone replies to your comment.
+- **@mention tagging.** Type `@username` anywhere in a post or comment and that user gets a real notification (block-aware on the server). The trigger uses a SECURITY DEFINER function with `set search_path = public` and is granted only to `authenticated`.
+- **Notifications inbox.** New bell icon on Home with an unread count and a dedicated Notifications screen. The `notifications` table is RLS-locked to the owner (SELECT/UPDATE/DELETE only — no INSERT policy, so notifications can only be created by server triggers). Opening the screen marks everything read.
+- **Friend + Follow coexist.** You can now be friends AND follow someone, just friends, or just follow. The profile screen shows both buttons side by side.
+- **"Other" picker textbox.** Picking Other for favourite handheld / frontend / system / game reveals a textbox to type your own. Stored in `custom_handhelds`, `custom_frontends`, `custom_systems`, `custom_games`.
+- **XP and leveling.** Posting, commenting, getting reactions, following, and joining communities all earn XP via SECURITY DEFINER triggers calling `add_xp()` (revoked from all client roles). Level formula: `floor(sqrt(xp/50)) + 1`. You get a `level_up` notification on every climb, and a level chip renders next to your name.
+- **Animated profile borders.** The entire profile card — banner, avatar, name, stats — can be wrapped in an animated border. Pick a preset (`classic`, `neon`, `sunset`, `aurora`, `gold`, `retro`, `plasma`) or paste a direct HTTPS image URL (animated GIF works). The `custom_border_url` column has a CHECK constraint that requires `https://`, image extension, and ≤ 512 chars — `data:` and `javascript:` URIs are rejected at the database layer.
+- **Animated GIF avatars and banners.** New "Avatar GIF" / "Banner GIF" buttons in Edit Profile skip the cropper (which would flatten the animation) and only accept files with a `.gif` extension or `image/gif` MIME.
+- **Achievements help popover.** A `?` icon next to the Achievements empty state opens a step-by-step guide to grabbing your RetroAchievements Web API key, with a bold warning that the key must never be shared.
 
 ### What's new in v1.3.1
 

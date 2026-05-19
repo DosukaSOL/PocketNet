@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { ArrowLeft, ImagePlus, Link as LinkIcon, Save, Sparkles } from 'lucide-react-native';
+import { ArrowLeft, ImagePlus, Link as LinkIcon, Save, Sparkles, Wand2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
@@ -9,8 +9,10 @@ import { DeviceProfileCard, DeviceSelect } from '@/components/social/DeviceProfi
 import { AppText, Badge, Button, Card, Row, Screen, Stack, TextArea, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { FRONTENDS, REGIONS, SAMPLE_GAMES, SYSTEMS } from '@/lib/catalog';
-import { pickImage, uploadImage } from '@/lib/media';
+import { pickGif, pickImage, uploadImage } from '@/lib/media';
 import { colors, radius, spacing } from '@/design/tokens';
+
+const BORDER_PRESETS = ['classic', 'neon', 'sunset', 'aurora', 'gold', 'retro', 'plasma'];
 
 export default function EditProfileScreen() {
   const { profile, patchProfile } = useAuth();
@@ -19,9 +21,13 @@ export default function EditProfileScreen() {
   const [bio, setBio] = useState(profile?.bio ?? '');
   const [region, setRegion] = useState(profile?.region ?? '');
   const [favoriteHandheld, setFavoriteHandheld] = useState(profile?.favoriteHandheld ?? '');
+  const [customHandheld, setCustomHandheld] = useState(profile?.customHandhelds?.[0] ?? '');
   const [favoriteFrontend, setFavoriteFrontend] = useState(profile?.favoriteFrontend ?? '');
+  const [customFrontend, setCustomFrontend] = useState(profile?.customFrontends?.[0] ?? '');
   const [favoriteSystems, setFavoriteSystems] = useState(profile?.favoriteSystems ?? []);
+  const [customSystem, setCustomSystem] = useState(profile?.customSystems?.[0] ?? '');
   const [favoriteGames, setFavoriteGames] = useState(profile?.favoriteGames ?? []);
+  const [customGame, setCustomGame] = useState(profile?.customGames?.[0] ?? '');
   const [setupNotes, setSetupNotes] = useState(profile?.setupNotes ?? '');
   const [currentGame, setCurrentGame] = useState(profile?.currentGame ?? '');
   const [currentStatus, setCurrentStatus] = useState(profile?.currentStatus ?? '');
@@ -33,6 +39,8 @@ export default function EditProfileScreen() {
   const [website, setWebsite] = useState(profile?.socialLinks.website ?? '');
   const [avatarUri, setAvatarUri] = useState<string | undefined>();
   const [bannerUri, setBannerUri] = useState<string | undefined>();
+  const [cardBorder, setCardBorder] = useState(profile?.cardBorder ?? 'classic');
+  const [customBorderUrl, setCustomBorderUrl] = useState(profile?.customBorderUrl ?? '');
   const [saving, setSaving] = useState(false);
 
   if (!profile) {
@@ -52,10 +60,28 @@ export default function EditProfileScreen() {
     }
   }
 
+  async function chooseAvatarGif() {
+    try {
+      const image = await pickGif();
+      if (image) setAvatarUri(image.uri);
+    } catch (error) {
+      Alert.alert('Could not pick GIF', error instanceof Error ? error.message : 'Try again.');
+    }
+  }
+
   async function chooseBanner() {
     const image = await pickImage();
     if (image) {
       setBannerUri(image.uri);
+    }
+  }
+
+  async function chooseBannerGif() {
+    try {
+      const image = await pickGif();
+      if (image) setBannerUri(image.uri);
+    } catch (error) {
+      Alert.alert('Could not pick GIF', error instanceof Error ? error.message : 'Try again.');
     }
   }
 
@@ -74,10 +100,20 @@ export default function EditProfileScreen() {
         displayName: displayName.trim(),
         bio,
         region,
-        favoriteHandheld,
-        favoriteFrontend,
-        favoriteSystems,
-        favoriteGames,
+        favoriteHandheld: customHandheld.trim() || favoriteHandheld,
+        favoriteFrontend: favoriteFrontend === 'Other' && customFrontend.trim() ? customFrontend.trim() : favoriteFrontend,
+        favoriteSystems: favoriteSystems.map((item) =>
+          item === 'Other' && customSystem.trim() ? customSystem.trim() : item
+        ),
+        favoriteGames: favoriteGames.map((item) =>
+          item === 'Other' && customGame.trim() ? customGame.trim() : item
+        ),
+        customHandhelds: customHandheld.trim() ? [customHandheld.trim()] : [],
+        customFrontends: customFrontend.trim() ? [customFrontend.trim()] : [],
+        customSystems: customSystem.trim() ? [customSystem.trim()] : [],
+        customGames: customGame.trim() ? [customGame.trim()] : [],
+        cardBorder,
+        customBorderUrl: customBorderUrl.trim() || undefined,
         setupNotes,
         currentGame,
         currentStatus,
@@ -140,7 +176,9 @@ export default function EditProfileScreen() {
         </Row>
         <Row style={styles.mediaButtons}>
           <Button label="Avatar" icon={ImagePlus} variant="secondary" onPress={() => void chooseAvatar()} />
+          <Button label="Avatar GIF" icon={Wand2} variant="ghost" onPress={() => void chooseAvatarGif()} />
           <Button label="Banner" icon={ImagePlus} variant="secondary" onPress={() => void chooseBanner()} />
+          <Button label="Banner GIF" icon={Wand2} variant="ghost" onPress={() => void chooseBannerGif()} />
         </Row>
       </Card>
 
@@ -157,20 +195,75 @@ export default function EditProfileScreen() {
       </Card>
       <Card>
         <AppText variant="sectionTitle">Handheld</AppText>
-        <DeviceSelect value={favoriteHandheld} onChange={setFavoriteHandheld} />
+        <DeviceSelect
+          value={favoriteHandheld}
+          onChange={setFavoriteHandheld}
+          customValue={customHandheld}
+          onCustomChange={setCustomHandheld}
+        />
         <DeviceProfileCard deviceName={favoriteHandheld} />
       </Card>
       <Card>
         <AppText variant="sectionTitle">Frontend</AppText>
-        <ChipPicker options={FRONTENDS} value={favoriteFrontend} onChange={(value) => setFavoriteFrontend(String(value))} />
+        <ChipPicker
+          options={FRONTENDS}
+          value={favoriteFrontend}
+          onChange={(value) => setFavoriteFrontend(String(value))}
+          allowOther
+          otherValue={customFrontend}
+          onOtherChange={setCustomFrontend}
+          otherPlaceholder="Type your frontend"
+        />
       </Card>
       <Card>
         <AppText variant="sectionTitle">Systems</AppText>
-        <ChipPicker options={SYSTEMS} value={favoriteSystems} multi onChange={(value) => setFavoriteSystems(value as string[])} />
+        <ChipPicker
+          options={SYSTEMS}
+          value={favoriteSystems}
+          multi
+          onChange={(value) => setFavoriteSystems(value as string[])}
+          allowOther
+          otherValue={customSystem}
+          onOtherChange={setCustomSystem}
+          otherPlaceholder="Type a system you love"
+        />
       </Card>
       <Card>
         <AppText variant="sectionTitle">Favorite Games</AppText>
-        <ChipPicker options={SAMPLE_GAMES} value={favoriteGames} multi onChange={(value) => setFavoriteGames(value as string[])} />
+        <ChipPicker
+          options={SAMPLE_GAMES}
+          value={favoriteGames}
+          multi
+          onChange={(value) => setFavoriteGames(value as string[])}
+          allowOther
+          otherValue={customGame}
+          onOtherChange={setCustomGame}
+          otherPlaceholder="Type a favorite game"
+        />
+      </Card>
+
+      <Card>
+        <AppText variant="sectionTitle">Profile Border</AppText>
+        <AppText variant="caption" color={colors.textSecondary}>
+          Pick a preset, or paste a direct image URL (https) for a fully custom border or animated frame.
+        </AppText>
+        <ChipPicker
+          options={BORDER_PRESETS}
+          value={cardBorder}
+          onChange={(value) => setCardBorder(String(value))}
+        />
+        <TextField
+          label="Custom border image URL"
+          value={customBorderUrl}
+          onChangeText={setCustomBorderUrl}
+          placeholder="https://your-cdn.com/border.gif"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <AppText variant="metadata" color={colors.textMuted}>
+          Animated GIF or static PNG/JPG/WEBP. HTTPS only. Keep it tasteful — PocketNet may remove
+          borders that violate the community guidelines.
+        </AppText>
       </Card>
 
       <Card>

@@ -1,7 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
-import { Compass, UserX } from 'lucide-react-native';
+import { Bell, Compass, UserX } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { PostCard } from '@/components/PostCard';
 import { BrandMark } from '@/components/BrandMark';
@@ -11,6 +11,7 @@ import {
   Button,
   EmptyState,
   GlowCard,
+  IconButton,
   Row,
   Screen,
   SegmentedTabs,
@@ -33,13 +34,15 @@ export default function HomeScreen() {
     acceptFriendRequest,
     rejectFriendRequest,
     refresh,
-    isLoading
+    isLoading,
+    notifications
   } = usePocketData();
   const [feedTab, setFeedTab] = useState<FeedKey>('fyp');
   const forYou = useMemo(() => getHomeFeed(), [getHomeFeed]);
   const explore = useMemo(() => getExploreFeed(), [getExploreFeed]);
   const feed = feedTab === 'fyp' ? forYou : explore;
   const requests = getIncomingRequests();
+  const unreadCount = notifications.filter((notification) => !notification.readAt).length;
 
   useFocusEffect(
     useCallback(() => {
@@ -49,6 +52,23 @@ export default function HomeScreen() {
 
   return (
     <Screen scroll refreshing={isLoading} onRefresh={() => void refresh()}>
+      <Row style={styles.topBar}>
+        <View style={styles.topBarSpacer} />
+        <View>
+          <IconButton
+            icon={Bell}
+            label="Notifications"
+            onPress={() => router.push('/notifications' as never)}
+          />
+          {unreadCount > 0 ? (
+            <View style={styles.bellBadge} pointerEvents="none">
+              <AppText variant="metadata" color={colors.textPrimary}>
+                {unreadCount > 99 ? '99+' : String(unreadCount)}
+              </AppText>
+            </View>
+          ) : null}
+        </View>
+      </Row>
       <Stack gap={spacing.sm} style={styles.heroBlock}>
         <BrandMark size={132} />
         <AppText variant="display" style={styles.wordmark}>
@@ -133,6 +153,25 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  topBar: {
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  topBarSpacer: {
+    flex: 1
+  },
+  bellBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    backgroundColor: colors.accentPink,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
   heroBlock: {
     alignItems: 'center',
     paddingTop: spacing.md,

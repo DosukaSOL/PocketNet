@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Flag, Heart, MessageCircle, MoreHorizontal, Pin, Send, Trash2 } from 'lucide-react-native';
+import { Flag, Heart, MessageCircle, MoreHorizontal, Pin, Send, Trash2, X } from 'lucide-react-native';
 import { useMemo, useRef, useState } from 'react';
 import { Alert, Animated, Pressable, StyleSheet, View } from 'react-native';
 
@@ -18,6 +18,7 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
   const { profile } = useAuth();
   const { getProfile, getCommunity, toggleLike, addComment, deletePost, report } = usePocketData();
   const [comment, setComment] = useState('');
+  const [replyingTo, setReplyingTo] = useState<{ commentId: string; username: string } | null>(null);
   const likeScale = useRef(new Animated.Value(1)).current;
   const author = getProfile(post.authorId);
   const community = getCommunity(post.communityId);
@@ -49,8 +50,14 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
   }
 
   async function handleAddComment() {
-    await addComment(post.id, comment);
+    await addComment(post.id, comment, replyingTo?.commentId);
     setComment('');
+    setReplyingTo(null);
+  }
+
+  function handleReplyTo(commentId: string, username: string) {
+    setReplyingTo({ commentId, username });
+    setComment((current) => (current.startsWith(`@${username} `) ? current : `@${username} `));
   }
 
   function handleReport() {
@@ -150,16 +157,45 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
 
       {!compact ? (
         <Stack gap={spacing.sm}>
-          {post.comments.slice(-2).map((item) => {
+          {post.comments.slice(-4).map((item) => {
             const commentAuthor = getProfile(item.authorId);
+            const parent = item.parentCommentId
+              ? post.comments.find((c) => c.id === item.parentCommentId)
+              : undefined;
+            const parentAuthor = parent ? getProfile(parent.authorId) : undefined;
             return (
-              <CommentCard key={item.id} comment={item} authorName={commentAuthor?.displayName ?? 'Player'} />
+              <CommentCard
+                key={item.id}
+                comment={item}
+                authorName={commentAuthor?.displayName ?? 'Player'}
+                parentAuthorName={parentAuthor?.username}
+                onReply={() =>
+                  handleReplyTo(item.id, commentAuthor?.username ?? 'player')
+                }
+              />
             );
           })}
+          {replyingTo ? (
+            <Row style={styles.replyingPill}>
+              <AppText variant="metadata" color={colors.accentCyan}>
+                Replying to @{replyingTo.username}
+              </AppText>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  setReplyingTo(null);
+                  setComment('');
+                }}
+                hitSlop={8}
+              >
+                <X size={14} color={colors.textMuted} />
+              </Pressable>
+            </Row>
+          ) : null}
           <Row style={styles.commentComposer}>
             <View style={styles.commentInput}>
               <TextField
-                placeholder="Write a reply"
+                placeholder={replyingTo ? 'Write your reply' : 'Write a reply'}
                 value={comment}
                 onChangeText={setComment}
                 returnKeyType="send"
@@ -219,5 +255,14 @@ const styles = StyleSheet.create({
   },
   commentInput: {
     flex: 1
+  },
+  replyingPill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: `${colors.accentCyan}55`,
+    backgroundColor: `${colors.accentCyan}11`,
+    alignSelf: 'flex-start'
   }
 });

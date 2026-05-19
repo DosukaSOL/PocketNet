@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.3.2 - Reply threads, @mentions, notifications inbox, levels, animated borders
+
+A big feature pack on top of the v1.3.x notification work. v1.3.2 adds **threaded comment replies**, **@username mentions** that fan out to real notifications, a dedicated **Notifications inbox** screen with a bell + unread count on the Home header, **friend + follow coexistence**, a **"Type your own"** textbox for every "Other" picker, an **XP / leveling** system that ties activity to a visible level chip, **animated profile card borders** (presets + custom HTTPS image URL — animated GIFs work and wrap the entire card, not just the avatar), **GIF avatars and banners**, and a **RetroAchievements help popover** with a step-by-step Web API key guide and safety warning.
+
+### New features
+
+- **Reply threads on posts.** Tap Reply under any comment to start a thread. Replies render indented under the comment they answered, and the original commenter is referenced as `↳ @username` so context never gets lost.
+- **@mention tagging.** Type `@username` in a post or comment and the user gets a real notification (block-aware). The mention extractor lives in `extract_mentioned_ids(p_body, p_exclude_id)`, runs as SECURITY DEFINER with `set search_path = public`, and is granted only to `authenticated`.
+- **Notifications inbox.** New bell icon on Home with an unread badge, and a `/notifications` route showing every ping in one place — friend requests, follows, post likes, post comments, comment replies, mentions, community joins, achievements, level-ups, and moderation. Opening the screen auto-marks everything read.
+- **Friend + Follow coexist.** The profile screen renders both buttons. Being friends does not block following, and unfollowing does not break a friendship.
+- **"Other" textbox.** Every "Other" chip now reveals a TextField so you can type your real handheld / frontend / system / favourite game. Stored in `profiles.custom_handhelds`, `custom_frontends`, `custom_systems`, `custom_games`.
+- **XP and leveling.** Posting, commenting, follows received, reactions on your posts, and joining communities all earn XP through SECURITY DEFINER triggers calling `add_xp()` (revoked from `anon`, `authenticated`, and `public`). Level curve: `floor(sqrt(xp/50)) + 1`. A `level_up` notification fires whenever you cross a level boundary. Backfill ran once for existing accounts.
+- **Animated profile card borders.** The entire profile card — banner + avatar + stats — sits inside an `AnimatedCardBorder`. Pick a preset (`classic`, `neon`, `sunset`, `aurora`, `gold`, `retro`, `plasma`) or paste a custom HTTPS image URL — animated GIFs work and rotate around the full card. The `custom_border_url` CHECK constraint requires `^https://...` ending in `png|jpe?g|gif|webp` and ≤ 512 chars; `data:` and `javascript:` schemes are rejected at the database layer.
+- **Animated GIF avatars and banners.** Edit Profile gains "Avatar GIF" and "Banner GIF" buttons that skip the cropper (which flattens animation) and only accept files with `.gif` extension or `image/gif` MIME.
+- **Achievements help popover.** A `?` icon next to the "Achievements unavailable" / "No RetroAchievements account linked" empty state opens a modal with: a 4-step guide to grabbing your Web API key from `retroachievements.org/controlpanel.php`, a bold warning that the key grants read access to your RA account (never share it), a privacy reminder that your password never leaves your device, and shortcut buttons to open the RA control panel or jump to Settings.
+- **Level chip on profile.** A small "Lv N" chip renders next to your display name on the profile header.
+
+### Security
+
+- `notifications` table: RLS owner-only SELECT/UPDATE/DELETE. **No INSERT policy** — notifications can only be created server-side by SECURITY DEFINER triggers.
+- All new triggers run with `set search_path = public` to prevent search-path injection.
+- `add_xp()` is granted to nobody; it is invoked only by trigger functions running as definer.
+- `extract_mentioned_ids()` is granted only to `authenticated`.
+- `custom_border_url` CHECK forbids non-HTTPS URLs, non-image extensions, and oversize values.
+- Mention triggers `DISTINCT` mentioned IDs and check `public.blocks` before fanning out.
+
 ## 1.3.1 - RA login fix, score sync, notifications, DEV badge
 
 A bug-fix-plus release. The big one: **RetroAchievements login was returning HTTP 403** on real devices because RA's WAF blocks the default React Native okhttp User-Agent. We now send an explicit `PocketNet/1.3.1` UA on every call to retroachievements.org. v1.3.1 also wires the RA score directly into the profile (so it stays up to date even without a Web API key), adds per-friend notification preferences, and introduces a single-account DEV badge with a pulsing glow.

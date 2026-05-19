@@ -31,7 +31,9 @@ export default function UserScreen() {
     joinCommunity,
     leaveCommunity,
     canViewProfile,
-    isFollowing
+    isFollowing,
+    follow,
+    unfollow
   } = usePocketData();
   const { openThreadWith } = useMessaging();
   const [tab, setTab] = useState<ProfileTab>('posts');
@@ -134,6 +136,8 @@ export default function UserScreen() {
         onAccept={() => incoming && void acceptFriendRequest(incoming.id)}
         onBlock={handleBlock}
         onReport={handleReport}
+        isFollowing={isFollower}
+        onFollow={() => (isFollower ? void unfollow(target.id) : void follow(target.id))}
       />
       {!isCurrentUser && (isFriend || isFollower) ? (
         <NotificationPreferencesCard targetId={target.id} targetName={target.displayName} />

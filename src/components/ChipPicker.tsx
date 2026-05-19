@@ -1,47 +1,77 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { PressableScale } from '@/components/ui';
+import { PressableScale, TextField } from '@/components/ui';
 import { colors, radius, spacing } from '@/design/tokens';
+
+type OtherProps =
+  | { allowOther?: false; otherValue?: undefined; onOtherChange?: undefined; otherPlaceholder?: undefined }
+  | {
+      allowOther: true;
+      otherValue: string;
+      onOtherChange: (next: string) => void;
+      otherPlaceholder?: string;
+    };
+
+type ChipPickerProps = {
+  options: string[];
+  value: string | string[];
+  onChange: (next: string | string[]) => void;
+  multi?: boolean;
+} & OtherProps;
 
 export function ChipPicker({
   options,
   value,
   onChange,
-  multi = false
-}: {
-  options: string[];
-  value: string | string[];
-  onChange: (next: string | string[]) => void;
-  multi?: boolean;
-}) {
+  multi = false,
+  allowOther,
+  otherValue,
+  onOtherChange,
+  otherPlaceholder
+}: ChipPickerProps) {
   const values = Array.isArray(value) ? value : value ? [value] : [];
+  const otherSelected = allowOther && values.includes('Other');
 
   return (
-    <View style={styles.wrap}>
-      {options.map((option) => {
-        const active = values.includes(option);
-        return (
-          <PressableScale
-            key={option}
-            accessibilityRole="button"
-            onPress={() => {
-              if (multi) {
-                onChange(active ? values.filter((item) => item !== option) : [...values, option]);
-              } else {
-                onChange(option);
-              }
-            }}
-            style={[styles.chip, active && styles.activeChip]}
-          >
-            <Text style={[styles.label, active && styles.activeLabel]}>{option}</Text>
-          </PressableScale>
-        );
-      })}
+    <View style={styles.column}>
+      <View style={styles.wrap}>
+        {options.map((option) => {
+          const active = values.includes(option);
+          return (
+            <PressableScale
+              key={option}
+              accessibilityRole="button"
+              onPress={() => {
+                if (multi) {
+                  onChange(active ? values.filter((item) => item !== option) : [...values, option]);
+                } else {
+                  onChange(option);
+                }
+              }}
+              style={[styles.chip, active && styles.activeChip]}
+            >
+              <Text style={[styles.label, active && styles.activeLabel]}>{option}</Text>
+            </PressableScale>
+          );
+        })}
+      </View>
+      {otherSelected ? (
+        <TextField
+          label="Type your own"
+          value={otherValue ?? ''}
+          onChangeText={(next) => onOtherChange?.(next)}
+          placeholder={otherPlaceholder ?? 'Tell us what you actually use'}
+          autoCapitalize="words"
+        />
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  column: {
+    gap: spacing.sm
+  },
   wrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',

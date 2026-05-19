@@ -3,6 +3,7 @@ import { Image as ImageIcon, Lock, Trophy } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 
+import { AchievementsHelpButton } from '@/components/social/AchievementsHelpPopover';
 import { CommunityCard } from '@/components/CommunityCard';
 import { PostCard } from '@/components/PostCard';
 import { UserCard } from '@/components/social/UserCard';
@@ -161,19 +162,31 @@ export function ProfileTabContent({
   // achievements
   if (!profile.raUsername) {
     return (
-      <EmptyState
-        title="No RetroAchievements account linked"
-        body={
-          isCurrentUser
-            ? 'Link your RetroAchievements account in Settings → Account → RetroAchievements.'
-            : `${profile.displayName} has not linked a RetroAchievements account yet.`
-        }
-        icon={Trophy}
-      />
+      <Stack gap={spacing.sm}>
+        <Row style={{ justifyContent: 'flex-end' }}>
+          <AchievementsHelpButton />
+        </Row>
+        <EmptyState
+          title="No RetroAchievements account linked"
+          body={
+            isCurrentUser
+              ? 'Link your RetroAchievements account in Settings → Account → RetroAchievements.'
+              : `${profile.displayName} has not linked a RetroAchievements account yet.`
+          }
+          icon={Trophy}
+        />
+      </Stack>
     );
   }
   if (ra.error) {
-    return <EmptyState title="Achievements unavailable" body={ra.error} icon={Trophy} />;
+    return (
+      <Stack gap={spacing.sm}>
+        <Row style={{ justifyContent: 'flex-end' }}>
+          <AchievementsHelpButton />
+        </Row>
+        <EmptyState title="Achievements unavailable" body={ra.error} icon={Trophy} />
+      </Stack>
+    );
   }
   if (ra.loading) {
     return <EmptyState title="Loading achievements…" body={`Pulling latest unlocks for ${profile.raUsername}.`} icon={Trophy} />;

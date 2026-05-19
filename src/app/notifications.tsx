@@ -1,5 +1,6 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { ArrowLeft, BellOff, CheckCheck } from 'lucide-react-native';
+import { useCallback } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { NotificationCard } from '@/components/social/NotificationCard';
@@ -13,6 +14,12 @@ export default function NotificationsScreen() {
     (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
   );
   const unreadCount = sorted.filter((notification) => !notification.readAt).length;
+
+  useFocusEffect(
+    useCallback(() => {
+      void markNotificationsRead();
+    }, [markNotificationsRead])
+  );
 
   return (
     <Screen scroll>

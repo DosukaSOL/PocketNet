@@ -36,6 +36,9 @@ export type Profile = {
   raSyncedAt?: string;
   isPrivate: boolean;
   cardBorder: string;
+  customBorderUrl?: string;
+  xp?: number;
+  level?: number;
   badges: string[];
   lastSeenAt?: string;
   createdAt: string;
@@ -53,6 +56,7 @@ export type Comment = {
   postId: ID;
   authorId: ID;
   body: string;
+  parentCommentId?: ID;
   createdAt: string;
 };
 
@@ -105,12 +109,20 @@ export type Notification = {
   type:
     | 'friend_request'
     | 'friend_accept'
+    | 'follow'
     | 'post_like'
     | 'post_comment'
+    | 'comment_reply'
+    | 'mention'
     | 'community_join'
+    | 'achievement'
+    | 'level_up'
     | 'moderation';
   title: string;
   body: string;
+  postId?: ID;
+  commentId?: ID;
+  communityId?: ID;
   readAt?: string;
   createdAt: string;
 };
@@ -162,6 +174,7 @@ export type UpdateProfileInput = Partial<
     | 'raUsername'
     | 'isPrivate'
     | 'cardBorder'
+    | 'customBorderUrl'
     | 'raPoints'
     | 'raSoftcorePoints'
     | 'raSyncedAt'

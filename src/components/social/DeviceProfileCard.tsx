@@ -2,7 +2,7 @@ import { Check, ChevronDown, Gamepad2, LayoutPanelTop, Rows3, Sparkles } from 'l
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { AppText, Badge, Card, GlowCard, PressableScale, Row, Stack } from '@/components/ui';
+import { AppText, Badge, Card, GlowCard, PressableScale, Row, Stack, TextField } from '@/components/ui';
 import { colors, radius, spacing } from '@/design/tokens';
 import { DEVICE_PROFILES, getDeviceProfile, type DeviceProfile } from '@/lib/devices';
 
@@ -40,20 +40,26 @@ export function DeviceProfileCard({ deviceName }: { deviceName?: string }) {
 
 export function DeviceSelect({
   value,
-  onChange
+  onChange,
+  customValue,
+  onCustomChange
 }: {
   value: string;
   onChange: (value: string) => void;
+  customValue?: string;
+  onCustomChange?: (next: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const active = getDeviceProfile(value);
+  const known = DEVICE_PROFILES.some((device) => device.name === value);
+  const showCustom = onCustomChange !== undefined && (!known || value === 'Custom handheld' || value === 'Other');
 
   return (
     <Stack gap={spacing.sm}>
       <PressableScale onPress={() => setOpen((next) => !next)} style={styles.selectButton}>
         <View style={styles.selectText}>
           <AppText variant="metadata" color={colors.textMuted}>Handheld device</AppText>
-          <AppText variant="bodyStrong">{active.name}</AppText>
+          <AppText variant="bodyStrong">{customValue?.trim() || active.name}</AppText>
         </View>
         <ChevronDown color={active.accentColor} size={20} />
       </PressableScale>
@@ -71,6 +77,15 @@ export function DeviceSelect({
             />
           ))}
         </Card>
+      ) : null}
+      {showCustom ? (
+        <TextField
+          label="Name your handheld"
+          value={customValue ?? ''}
+          onChangeText={(next) => onCustomChange?.(next)}
+          placeholder="e.g. RG406H, GKD Pixel, custom build"
+          autoCapitalize="words"
+        />
       ) : null}
     </Stack>
   );

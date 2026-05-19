@@ -78,7 +78,7 @@ type SocialContextValue = {
   createPost: (input: CreatePostInput) => Promise<void>;
   deletePost: (postId: ID) => Promise<void>;
   toggleLike: (postId: ID) => Promise<void>;
-  addComment: (postId: ID, body: string) => Promise<void>;
+  addComment: (postId: ID, body: string, parentCommentId?: ID) => Promise<void>;
   sendFriendRequest: (toUserId: ID) => Promise<void>;
   acceptFriendRequest: (requestId: ID) => Promise<void>;
   rejectFriendRequest: (requestId: ID) => Promise<void>;
@@ -141,8 +141,15 @@ export function SocialProvider({ children }: PropsWithChildren) {
     setIsLoading(true);
 
     try {
-      const [profilesResult, postsResult, communitiesResult, friendshipsResult, requestsResult, followsResult] =
-        await Promise.all([
+      const [
+        profilesResult,
+        postsResult,
+        communitiesResult,
+        friendshipsResult,
+        requestsResult,
+        followsResult,
+        notificationsResult
+      ] = await Promise.all([
           supabase.from('profiles').select('*').order('updated_at', { ascending: false }),
           supabase
             .from('posts')
@@ -155,7 +162,13 @@ export function SocialProvider({ children }: PropsWithChildren) {
             .order('created_at', { ascending: false }),
           supabase.from('friendships').select('*'),
           supabase.from('friend_requests').select('*').eq('status', 'pending'),
-          supabase.from('follows').select('*')
+          supabase.from('follows').select('*'),
+          supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false })
+            .limit(100)
         ]);
 
       if (profilesResult.data) {
@@ -198,6 +211,24 @@ export function SocialProvider({ children }: PropsWithChildren) {
           followsResult.data.map((row) => ({
             followerId: String(row.follower_id),
             followeeId: String(row.followee_id),
+            createdAt: String(row.created_at)
+          }))
+        );
+      }
+
+      if (notificationsResult.data) {
+        setNotifications(
+          notificationsResult.data.map((row) => ({
+            id: String(row.id),
+            userId: String(row.user_id),
+            actorId: row.actor_id ? String(row.actor_id) : undefined,
+            type: String(row.type) as Notification['type'],
+            title: String(row.title ?? ''),
+            body: String(row.body ?? ''),
+            postId: row.post_id ? String(row.post_id) : undefined,
+            commentId: row.comment_id ? String(row.comment_id) : undefined,
+            communityId: row.community_id ? String(row.community_id) : undefined,
+            readAt: row.read_at ? String(row.read_at) : undefined,
             createdAt: String(row.created_at)
           }))
         );
@@ -615,7 +646,7 @@ export function SocialProvider({ children }: PropsWithChildren) {
   );
 
   const addComment = useCallback(
-    async (postId: ID, body: string) => {
+    async (postId: ID, body: string, parentCommentId?: ID) => {
       const trimmed = body.trim();
       if (!trimmed) {
         return;
@@ -626,6 +657,7 @@ export function SocialProvider({ children }: PropsWithChildren) {
         postId,
         authorId: currentUserId,
         body: trimmed,
+        parentCommentId,
         createdAt: new Date().toISOString()
       };
 
@@ -639,7 +671,8 @@ export function SocialProvider({ children }: PropsWithChildren) {
         await supabase.from('comments').insert({
           post_id: postId,
           author_id: currentUserId,
-          body: trimmed
+          body: trimmed,
+          parent_comment_id: parentCommentId ?? null
         });
       }
     },

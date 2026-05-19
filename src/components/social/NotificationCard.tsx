@@ -1,4 +1,4 @@
-import { Bell, CheckCircle2, Heart, MessageCircle, ShieldAlert, UserPlus, Users } from 'lucide-react-native';
+import { AtSign, Award, Bell, CheckCircle2, Heart, MessageCircle, MessageSquare, ShieldAlert, Sparkles, UserPlus, Users } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText, Avatar, Button, Card, Row, Stack } from '@/components/ui';
@@ -6,12 +6,17 @@ import { colors, spacing } from '@/design/tokens';
 import { usePocketData } from '@/features/social/SocialProvider';
 import type { Notification } from '@/types/domain';
 
-const iconByType = {
+const iconByType: Partial<Record<Notification['type'], typeof Bell>> = {
   friend_request: UserPlus,
   friend_accept: CheckCircle2,
+  follow: Heart,
   post_like: Heart,
   post_comment: MessageCircle,
+  comment_reply: MessageSquare,
+  mention: AtSign,
   community_join: Users,
+  achievement: Award,
+  level_up: Sparkles,
   moderation: ShieldAlert
 };
 

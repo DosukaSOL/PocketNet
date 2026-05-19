@@ -1,4 +1,4 @@
-const version = '1.3.1';
+const version = '1.3.2';
 
 export default {
   expo: {
@@ -20,7 +20,7 @@ export default {
     assetBundlePatterns: ['**/*'],
     android: {
       package: 'com.pocketnet.app',
-      versionCode: 14,
+      versionCode: 15,
       adaptiveIcon: {
         foregroundImage: './src/assets/images/pocketnet-logo.png',
         backgroundColor: '#05060A'

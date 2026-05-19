@@ -14,6 +14,24 @@ export type ReleaseEntry = {
 
 export const RELEASES: ReleaseEntry[] = [
   {
+    version: '1.3.2',
+    date: '2026-05-20',
+    title: 'Reply threads, @mentions, notifications inbox, levels, borders',
+    highlights: [
+      'Reply directly to comments on any post — threaded replies with the original commenter highlighted',
+      'Tag people with @username — they get a real notification, just like X/Twitter',
+      'New Notifications inbox: bell icon on Home with unread count, every ping in one place',
+      'Friends and Follow now coexist — be friends AND follow, or just one',
+      'Pick "Other" on favourite games / handhelds / frontends / systems and type your own',
+      'Level up by posting, commenting, getting reactions, following, and joining communities (formula: floor(√(xp/50))+1)',
+      'Level badge next to your name, with a level-up notification whenever you climb',
+      'New profile border presets + paste your own custom border image URL (animated GIFs supported)',
+      'Animated GIF avatars and banners — pick directly from your library',
+      '"How do I show my RetroAchievements?" help popover with full instructions + Web API key safety warning',
+      'Notifications auto-mark-read when you open the inbox'
+    ]
+  },
+  {
     version: '1.3.1',
     date: '2026-05-19',
     title: 'RA login fix, score sync, notifications, DEV badge',

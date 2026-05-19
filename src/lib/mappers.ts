@@ -45,6 +45,9 @@ export function profileFromRow(row: ProfileRow): Profile {
     raSyncedAt: row.ra_synced_at ? String(row.ra_synced_at) : undefined,
     isPrivate: Boolean(row.is_private),
     cardBorder: row.card_border ? String(row.card_border) : 'classic',
+    customBorderUrl: row.custom_border_url ? String(row.custom_border_url) : undefined,
+    xp: row.xp != null ? Number(row.xp) : 0,
+    level: row.level != null ? Number(row.level) : 1,
     badges: stringArray(row.badges),
     lastSeenAt: row.last_seen_at ? String(row.last_seen_at) : undefined,
     createdAt: String(row.created_at),
@@ -79,6 +82,7 @@ export function profileToRowPatch(profile: Partial<Profile>) {
     ra_synced_at: profile.raSyncedAt,
     is_private: profile.isPrivate,
     card_border: profile.cardBorder,
+    custom_border_url: profile.customBorderUrl,
     updated_at: new Date().toISOString()
   };
 }
@@ -107,6 +111,9 @@ export function postFromRow(row: PostRow): Post {
         postId: String((comment as PostRow).post_id),
         authorId: String((comment as PostRow).author_id),
         body: String((comment as PostRow).body ?? ''),
+        parentCommentId: (comment as PostRow).parent_comment_id
+          ? String((comment as PostRow).parent_comment_id)
+          : undefined,
         createdAt: String((comment as PostRow).created_at)
       }))
       .filter((comment) => comment.id),
