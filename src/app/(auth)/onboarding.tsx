@@ -33,6 +33,7 @@ import { FRONTENDS, HANDHELDS, SAMPLE_GAMES, SYSTEMS } from '@/lib/catalog';
 import { pickImage, uploadImage } from '@/lib/media';
 import { requestPushPermission, savePushToken } from '@/lib/push';
 import { awardBadge, claimOgBadge } from '@/lib/badgeClaim';
+import { markTourPending } from '@/components/tour/AppTour';
 
 type StepKey = 'avatar' | 'banner' | 'about' | 'device' | 'systems' | 'socials' | 'preview';
 
@@ -175,6 +176,7 @@ export default function OnboardingScreen() {
       void awardBadge('verified');
       void awardBadge('completionist');
       void awardBadge('pioneer');
+      await markTourPending();
       router.replace('/(tabs)/home');
     } catch (error) {
       Alert.alert('Could not save onboarding', error instanceof Error ? error.message : 'Try again.');

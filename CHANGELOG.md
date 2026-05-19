@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.3.4 - Bigger banner, border motion options, keyless GIFs, first-run tour
+
+Polish + UX pack. v1.3.4 makes profile banners bigger and lifts your display name, @handle, and level chip out of the banner area into a clean row below it. Animated borders no longer always rotate — pick **Rotate / Pulse / Breathe / Shimmer / Static** motion per preset. New static border presets (**Mono, Ocean, Rose, Forest, Slate, Neon, Flames**) widen the choice when you don't want animation. Profile card export now toggles between **JPEG (still)** and **GIF (animated)** so animated borders show motion in the export. In-app GIF search now works out of the box with **no API key required** (keyless Giphy fallback). **Comments now render the author's profile picture** and tapping any commenter opens their profile. The **online dot** is finally live — green while in the app, grey when you leave. A friendly **first-run tour** with Pocket Foxy explains the core surfaces in ~30 seconds and is skippable. The **Developer** badge now uses a technologist emoji instead of a wolf.
+
+### New features
+
+- **Bigger banner with repositioned identity.** Banner is now 240 px tall; the avatar overlaps it by ~56 px; display name + level chip and @handle + private badge live below the banner in a clean two-row block (no more cluttered overlap).
+- **Border motion picker.** Animated border presets get a new `BorderMotion` axis: `rotate`, `pulse`, `breathe`, `shimmer`, `static`. Motion is encoded in the existing `card_border` column as `preset::motion` so no schema change is needed. Live preview reflects the selected motion.
+- **More static border presets.** Static (non-animated) borders now include `classic`, `mono`, `ocean`, `rose`, `forest`, `slate`, **`glow`** (neon shadow), and **`flames`** (warm gradient).
+- **JPEG / GIF profile card export.** Toggle the format on the export screen. GIF captures 8 frames at half resolution and encodes a real animated GIF on-device using pure JS (`gifenc` + `upng-js`). JPEG keeps full resolution for crisp stills.
+- **Keyless in-app GIF search.** Tenor still preferred when `EXPO_PUBLIC_TENOR_KEY` is set, but the picker now falls back to Giphy's documented public Beta API key — meaning the in-app search works for everyone without setup.
+- **Profile pictures + tap-to-profile in comments.** `CommentCard` now renders a 28 px avatar of the comment author, shows `@username`, and a tap on either takes you straight to that user's profile.
+- **Live online presence.** Avatar status dots are now driven by the existing `last_seen_at` heartbeat (refreshed on app foreground + every minute) instead of by `currentGame`. Bubble is green when the user has been active in the last 2 minutes, grey otherwise.
+- **First-run tour with Pocket Foxy.** After finishing onboarding, an opt-in modal asks "Quick tour?" and walks through the home feed, discover, and profile customization in 4 quick steps. The flag is stored in `AsyncStorage` (`pocketnet:tour-pending` / `pocketnet:tour-done`).
+- **Technologist developer badge.** The `dev` badge emoji moves from 🐺 to 🧑‍💻 in `src/lib/badges.ts`. The glowing badge container is unchanged.
+
 ## 1.3.3 - Live profile preview, GIF replies, community studio, pull-to-refresh
 
 A polish + features pack. v1.3.3 adds a **live preview** in Edit Profile, splits borders into **Static** and **Animated** sections, ships **three new animated borders** (lightning, fire, glitch), lets you **upload your own GIF border**, lets you **delete your own comments**, gives **communities a real studio** (avatar, banner, bio, social links, animated borders, edit screen for the owner) with **per-community notifications** and **owner + moderator pin/unpin**, adds a **Tenor GIF picker** for replies and posts, brings **pull-to-refresh to every feed**, lets you **crop your avatar and banner**, and fixes the **`mime type image/gif is not supported`** upload error.

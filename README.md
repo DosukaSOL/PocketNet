@@ -46,7 +46,19 @@ PocketNet is standalone and is not affiliated with AYN, Cocoon, Daijisho, ES-DE,
 
 ## Beta Status — What Works & What Doesn't
 
-PocketNet **v1.3.3** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+PocketNet **v1.3.4** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+
+### What's new in v1.3.4
+
+- **Bigger profile banner + repositioned identity.** The banner is taller (240 px) and your display name, @handle, and level chip are now in a clean two-row block below the banner instead of overlapping it.
+- **Border motion options.** Animated borders no longer always rotate — pick **Rotate, Pulse, Breathe, Shimmer, or Static** per preset. Motion is encoded in the existing `card_border` column as `preset::motion` so no schema change is needed. The live preview updates as you change motion.
+- **More static border presets.** New non-animated borders: **Mono, Ocean, Rose, Forest, Slate, Neon (glow), Flames** — for users who want a strong look without animation.
+- **JPEG / GIF profile card export.** A new format toggle on the export screen. **GIF** captures 8 frames at half resolution and encodes a real animated GIF on-device with pure JS (`gifenc` + `upng-js`); **JPEG** keeps full resolution for crisp stills.
+- **Keyless in-app GIF search.** The GIF picker no longer requires you to bring your own Tenor key — it falls back to Giphy's documented public Beta key. Tenor is still preferred when `EXPO_PUBLIC_TENOR_KEY` is set.
+- **Comments show profile pictures.** Every comment now renders a 28 px avatar of its author plus their @username, and tapping either opens the author's profile.
+- **Live online presence.** Avatar status dots are now driven by the existing `last_seen_at` heartbeat. Green when active in the last 2 minutes, grey otherwise.
+- **First-run tour.** After onboarding, an opt-in modal with Pocket Foxy walks new users through home, discover, and profile customization in ~30 seconds. State is stored in `AsyncStorage` (`pocketnet:tour-pending` / `pocketnet:tour-done`).
+- **Technologist developer badge.** The `dev` badge emoji is now 🧑‍💻 instead of 🐺.
 
 ### What's new in v1.3.3
 

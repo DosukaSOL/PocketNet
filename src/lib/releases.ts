@@ -14,6 +14,22 @@ export type ReleaseEntry = {
 
 export const RELEASES: ReleaseEntry[] = [
   {
+    version: '1.3.4',
+    date: '2026-05-22',
+    title: 'Bigger banner, border motion options, keyless GIFs, first-run tour',
+    highlights: [
+      'Bigger profile banner — your display name, @handle, and level chip now live below the banner with breathing room (no more cluttered overlap)',
+      'Animated borders are no longer locked to "always rotate" — pick Rotate, Pulse, Breathe, Shimmer, or Static motion per preset',
+      'New static border presets: Mono, Ocean, Rose, Forest, Slate, plus glowing Neon and a Flames border',
+      'Profile card export now lets you toggle between JPEG (high-res still) and animated GIF — borders move in the GIF',
+      'In-app GIF search now works out of the box (no API key needed) — search and tap to insert in posts and replies',
+      'Comments show the author\u2019s profile picture, and tapping a commenter takes you to their profile',
+      'Online dot is now actually live — your bubble turns green while you\u2019re using the app and goes grey when you leave',
+      'First-run tour with Pocket Foxy — a friendly 30-second walkthrough that you can skip',
+      'Developer badge now wears a "technologist" emoji instead of the old wolf icon'
+    ]
+  },
+  {
     version: '1.3.3',
     date: '2026-05-21',
     title: 'Live profile preview, GIF replies, community studio, pull-to-refresh',

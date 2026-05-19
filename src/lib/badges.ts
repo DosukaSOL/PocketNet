@@ -27,7 +27,7 @@ export const BADGES: BadgeDefinition[] = [
     id: 'dev',
     label: 'Developer',
     description: 'The official developer of PocketNet. There is only one.',
-    emoji: '🐺',
+    emoji: '🧑‍💻',
     tone: 'dev',
     glow: true,
     howTo: 'Awarded to @dosuka. This badge is permanently locked to a single account on the server.'

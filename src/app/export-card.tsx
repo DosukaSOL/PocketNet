@@ -5,12 +5,14 @@ import { useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 
+import { ChipPicker } from '@/components/ChipPicker';
 import { ProfileCardCanvas } from '@/components/social/ProfileCardCanvas';
 import { AppText, Badge, Button, EmptyState, GlowCard, Row, Screen, Stack } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useRetroAchievements } from '@/hooks/useRetroAchievements';
 import { usePocketData } from '@/features/social/SocialProvider';
 import { colors, radius, spacing } from '@/design/tokens';
+import { captureAnimatedGif } from '@/lib/gifExport';
 import {
   PROFILE_CARD_BORDERS,
   PROFILE_CARD_GEOMETRY,
@@ -22,7 +24,9 @@ export default function ExportCardScreen() {
   const { getProfilePosts, getFriendsOf, getFollowersOf, getCommunitiesOf } = usePocketData();
   const [borderId, setBorderId] = useState(profile?.cardBorder ?? 'classic');
   const [fullCard, setFullCard] = useState(false);
+  const [format, setFormat] = useState<'jpeg' | 'gif'>('jpeg');
   const [saving, setSaving] = useState(false);
+  const [gifProgress, setGifProgress] = useState<{ frame: number; total: number } | null>(null);
   const canvasRef = useRef<View>(null);
 
   const ra = useRetroAchievements(fullCard ? profile?.raUsername : undefined);
@@ -66,18 +70,38 @@ export default function ExportCardScreen() {
           // non-fatal — the export still works.
         }
       }
-      const uri = await captureRef(canvasRef, {
-        format: 'png',
-        quality: 1,
-        width: geom.width,
-        height: geom.height
-      });
+      let uri: string;
+      if (format === 'gif') {
+        // GIF: capture at half resolution so JS encoding stays responsive.
+        setGifProgress({ frame: 0, total: 8 });
+        uri = await captureAnimatedGif(canvasRef, {
+          width: Math.round(geom.width / 2),
+          height: Math.round(geom.height / 2),
+          frames: 8,
+          intervalMs: 240,
+          frameDelayMs: 220,
+          onProgress: (frame, total) => setGifProgress({ frame, total })
+        });
+      } else {
+        uri = await captureRef(canvasRef as unknown as React.RefObject<View>, {
+          format: 'jpg',
+          quality: 0.95,
+          width: geom.width,
+          height: geom.height
+        });
+      }
       await MediaLibrary.saveToLibraryAsync(uri);
-      Alert.alert('Saved', `Profile card saved to your gallery (${geom.width} × ${geom.height} px).`);
+      Alert.alert(
+        'Saved',
+        format === 'gif'
+          ? `Animated card saved to your gallery (${Math.round(geom.width / 2)} × ${Math.round(geom.height / 2)} px GIF).`
+          : `Profile card saved to your gallery (${geom.width} × ${geom.height} px JPEG).`
+      );
     } catch (error) {
       Alert.alert('Could not save', error instanceof Error ? error.message : 'Try again.');
     } finally {
       setSaving(false);
+      setGifProgress(null);
     }
   }
 
@@ -95,6 +119,22 @@ export default function ExportCardScreen() {
           include posts, friends, followers, communities, and achievements.
         </AppText>
       </Stack>
+
+      <GlowCard tone="cyan">
+        <Stack gap={spacing.xs}>
+          <AppText variant="sectionTitle">Format</AppText>
+          <ChipPicker
+            options={['JPEG (still)', 'GIF (animated)']}
+            value={format === 'gif' ? 'GIF (animated)' : 'JPEG (still)'}
+            onChange={(value) => setFormat(value === 'GIF (animated)' ? 'gif' : 'jpeg')}
+          />
+          <AppText variant="metadata" color={colors.textMuted}>
+            {format === 'gif'
+              ? 'Captures 8 frames at half resolution so animated borders move on the card. Takes a few seconds to encode.'
+              : 'High-quality JPEG at full resolution. Best for sharing.'}
+          </AppText>
+        </Stack>
+      </GlowCard>
 
       <GlowCard tone="cyan">
         <Stack gap={spacing.xs}>
@@ -162,7 +202,13 @@ export default function ExportCardScreen() {
       ) : null}
 
       <Button
-        label={saving ? 'Saving…' : 'Save to gallery'}
+        label={
+          saving
+            ? gifProgress
+              ? `Encoding… ${gifProgress.frame}/${gifProgress.total}`
+              : 'Saving…'
+            : 'Save to gallery'
+        }
         icon={Download}
         loading={saving}
         onPress={() => void handleSave()}

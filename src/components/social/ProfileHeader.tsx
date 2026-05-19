@@ -20,6 +20,7 @@ import { AnimatedCardBorder } from '@/components/social/AnimatedCardBorder';
 import { ProfileSocialLinks } from '@/components/social/ProfileSocialLinks';
 import { colors, gradients, radius, shadows, spacing } from '@/design/tokens';
 import { isDualScreenDevice } from '@/lib/devices';
+import { isOnline } from '@/lib/presence';
 import type { Profile } from '@/types/domain';
 
 export type ProfileTab = 'posts' | 'replies' | 'friends' | 'followers' | 'communities' | 'achievements';
@@ -105,25 +106,28 @@ export function ProfileHeader({
             <Avatar
               label={profile.displayName}
               uri={profile.avatarUrl}
-              size={88}
-              status={profile.currentGame ? 'online' : 'offline'}
+              size={96}
+              status={isOnline(profile.lastSeenAt) ? 'online' : 'offline'}
               focus={dualScreen}
             />
           </View>
-          <Stack gap={spacing.xs} style={styles.nameBlock}>
-            <Row>
-              <AppText variant="heroTitle" numberOfLines={1} style={styles.name}>
-                {profile.displayName}
-              </AppText>
-              {profile.level ? <LevelChip level={profile.level} /> : null}
-              {profile.isPrivate ? <Badge label="Private" tone="warning" compact /> : null}
-            </Row>
+        </View>
+
+        <Stack gap={spacing.xxs} style={styles.nameBlock}>
+          <Row style={styles.nameRow}>
+            <AppText variant="heroTitle" numberOfLines={1} style={styles.name}>
+              {profile.displayName}
+            </AppText>
+            {profile.level ? <LevelChip level={profile.level} /> : null}
+          </Row>
+          <Row style={styles.handleRow}>
             <AppText variant="caption" color={colors.textMuted}>
               @{profile.username}
             </AppText>
-            <ProfileBadgeStrip badges={profile.badges} />
-          </Stack>
-        </View>
+            {profile.isPrivate ? <Badge label="Private" tone="warning" compact /> : null}
+          </Row>
+          <ProfileBadgeStrip badges={profile.badges} />
+        </Stack>
 
         {profile.bio ? <AppText color={colors.textSecondary}>{profile.bio}</AppText> : null}
 
@@ -268,10 +272,10 @@ const styles = StyleSheet.create({
     ...shadows.card
   },
   banner: {
-    height: 184,
+    height: 240,
     marginHorizontal: -spacing.lg,
     marginTop: -spacing.lg,
-    marginBottom: -spacing.xl,
+    marginBottom: 0,
     backgroundColor: colors.surfaceStrong
   },
   bannerOverlay: {
@@ -281,18 +285,27 @@ const styles = StyleSheet.create({
   identity: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: spacing.md
+    paddingHorizontal: 0,
+    marginBottom: -spacing.xs
   },
   avatarLift: {
-    marginTop: -spacing.xxxl,
+    marginTop: -56,
     position: 'relative'
   },
   nameBlock: {
-    flex: 1,
-    paddingBottom: spacing.xs
+    paddingTop: spacing.xs
+  },
+  nameRow: {
+    alignItems: 'center',
+    flexWrap: 'wrap'
+  },
+  handleRow: {
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.xs
   },
   name: {
-    flex: 1
+    flexShrink: 1
   },
   badges: {
     flexWrap: 'wrap'

@@ -6,6 +6,7 @@ import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { StartupIntro } from '@/components/StartupIntro';
+import { AppTour } from '@/components/tour/AppTour';
 import { ToastProvider } from '@/components/ui/Toast';
 import { AuthProvider } from '@/features/auth/AuthProvider';
 import { MessagingProvider } from '@/features/messaging/MessagingProvider';
@@ -58,6 +59,7 @@ export default function RootLayout() {
                 <Stack.Screen name="messages/[id]" />
               </Stack>
               {introVisible ? <StartupIntro onDone={() => setIntroVisible(false)} /> : null}
+              {introVisible ? null : <AppTour />}
               </ToastProvider>
             </MessagingProvider>
           </SocialProvider>

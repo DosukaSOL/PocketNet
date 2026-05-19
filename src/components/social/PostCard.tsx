@@ -170,6 +170,8 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
                 key={item.id}
                 comment={item}
                 authorName={commentAuthor?.displayName ?? 'Player'}
+                authorUsername={commentAuthor?.username}
+                authorAvatarUrl={commentAuthor?.avatarUrl}
                 parentAuthorName={parentAuthor?.username}
                 onReply={() =>
                   handleReplyTo(item.id, commentAuthor?.username ?? 'player')

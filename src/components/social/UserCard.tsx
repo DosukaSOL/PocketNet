@@ -5,6 +5,7 @@ import { AppText, Avatar, Button, GlowCard, PressableScale, Row, Stack } from '@
 import { DeviceBadge, FrontendBadge } from '@/components/device';
 import { colors, spacing } from '@/design/tokens';
 import { isDualScreenDevice } from '@/lib/devices';
+import { isOnline } from '@/lib/presence';
 import type { Profile } from '@/types/domain';
 
 export function UserCard({
@@ -30,7 +31,7 @@ export function UserCard({
           <Avatar
             label={profile.displayName}
             uri={profile.avatarUrl}
-            status={profile.currentGame ? 'online' : 'offline'}
+            status={isOnline(profile.lastSeenAt) ? 'online' : 'offline'}
             focus={dualScreen}
           />
           <Stack gap={spacing.xs} style={styles.meta}>

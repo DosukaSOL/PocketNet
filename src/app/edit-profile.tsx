@@ -6,7 +6,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 
 import { ChipPicker } from '@/components/ChipPicker';
 import { ProfileHeader } from '@/components/ProfileHeader';
-import { ANIMATED_BORDERS, STATIC_BORDERS } from '@/components/social/AnimatedCardBorder';
+import { ANIMATED_BORDERS, BORDER_MOTIONS, STATIC_BORDERS, decodeCardBorder, encodeCardBorder, isAnimatedBorder, type BorderMotion } from '@/components/social/AnimatedCardBorder';
 import { DeviceProfileCard, DeviceSelect } from '@/components/social/DeviceProfileCard';
 import { AppText, Badge, Button, Card, Row, Screen, Stack, TextArea, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -39,7 +39,10 @@ export default function EditProfileScreen() {
   const [website, setWebsite] = useState(profile?.socialLinks.website ?? '');
   const [avatarUri, setAvatarUri] = useState<string | undefined>();
   const [bannerUri, setBannerUri] = useState<string | undefined>();
-  const [cardBorder, setCardBorder] = useState(profile?.cardBorder ?? 'classic');
+  const initialBorder = decodeCardBorder(profile?.cardBorder ?? 'classic');
+  const [borderPreset, setBorderPreset] = useState<string>(initialBorder.preset);
+  const [borderMotion, setBorderMotion] = useState<BorderMotion>(initialBorder.motion);
+  const cardBorder = encodeCardBorder(borderPreset, borderMotion);
   const [customBorderUrl, setCustomBorderUrl] = useState(profile?.customBorderUrl ?? '');
   const [saving, setSaving] = useState(false);
 
@@ -277,9 +280,9 @@ export default function EditProfileScreen() {
         <AppText variant="metadata" color={colors.textMuted}>Static</AppText>
         <ChipPicker
           options={STATIC_BORDERS as unknown as string[]}
-          value={STATIC_BORDERS.includes(cardBorder as never) ? cardBorder : ''}
+          value={STATIC_BORDERS.includes(borderPreset as never) ? borderPreset : ''}
           onChange={(value) => {
-            setCardBorder(String(value));
+            setBorderPreset(String(value));
             setCustomBorderUrl('');
           }}
         />
@@ -287,12 +290,26 @@ export default function EditProfileScreen() {
         <AppText variant="metadata" color={colors.textMuted}>Animated</AppText>
         <ChipPicker
           options={ANIMATED_BORDERS as unknown as string[]}
-          value={ANIMATED_BORDERS.includes(cardBorder as never) ? cardBorder : ''}
+          value={ANIMATED_BORDERS.includes(borderPreset as never) ? borderPreset : ''}
           onChange={(value) => {
-            setCardBorder(String(value));
+            setBorderPreset(String(value));
             setCustomBorderUrl('');
           }}
         />
+
+        {isAnimatedBorder(borderPreset) ? (
+          <>
+            <AppText variant="metadata" color={colors.textMuted}>Motion</AppText>
+            <AppText variant="caption" color={colors.textSecondary}>
+              Pick how the animated border moves. Lightning, fire and glitch have their own bespoke effect.
+            </AppText>
+            <ChipPicker
+              options={BORDER_MOTIONS as unknown as string[]}
+              value={borderMotion}
+              onChange={(value) => setBorderMotion(String(value) as BorderMotion)}
+            />
+          </>
+        ) : null}
 
         <AppText variant="sectionTitle">Custom GIF border</AppText>
         <AppText variant="caption" color={colors.textSecondary}>
