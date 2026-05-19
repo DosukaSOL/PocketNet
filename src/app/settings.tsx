@@ -1,12 +1,30 @@
 import { router } from 'expo-router';
 import type { LucideIcon } from 'lucide-react-native';
-import { ArrowLeft, Bell, Eye, LayoutPanelTop, LogOut, Palette, ShieldCheck, UserRound } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Bell,
+  Eye,
+  ImageDown,
+  LayoutPanelTop,
+  Lock,
+  LogOut,
+  Palette,
+  ShieldCheck,
+  Sparkles,
+  Trophy,
+  UserRound
+} from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 
-import { AppText, Badge, Button, GlowCard, Row, Screen, Stack } from '@/components/ui';
+import { AppText, Badge, Button, GlowCard, Row, Screen, Stack, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useThemeChoice, type LayoutPreference } from '@/features/theme/ThemeProvider';
+import { RELEASES } from '@/lib/releases';
+import { getPushEnabled, requestPushPermission, savePushToken, setPushEnabled } from '@/lib/push';
+import { verifyRaAccount } from '@/lib/retroachievements';
+import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, themeOptions, type ThemeName } from '@/design/tokens';
 
 const layoutOptions: { value: LayoutPreference; label: string; description: string }[] = [
@@ -17,8 +35,32 @@ const layoutOptions: { value: LayoutPreference; label: string; description: stri
 ];
 
 export default function SettingsScreen() {
-  const { signOut, isPreviewMode, hasSupabaseConfig } = useAuth();
+  const { signOut, isPreviewMode, hasSupabaseConfig, profile, patchProfile } = useAuth();
   const { theme, setTheme, layout, setLayout, pendingRestart } = useThemeChoice();
+
+  const [raUsername, setRaUsername] = useState(profile?.raUsername ?? '');
+  const [raKey, setRaKey] = useState('');
+  const [raSaving, setRaSaving] = useState(false);
+  const [raError, setRaError] = useState<string>();
+  const [raMessage, setRaMessage] = useState<string>();
+
+  const [pushStatus, setPushStatus] = useState<'unknown' | 'on' | 'off' | 'denied' | 'unsupported'>('unknown');
+  const [pushBusy, setPushBusy] = useState(false);
+
+  const [privacyBusy, setPrivacyBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!profile?.id) return;
+      const enabled = await getPushEnabled(profile.id);
+      if (!cancelled) setPushStatus(enabled ? 'on' : 'off');
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id]);
 
   async function handleSignOut() {
     try {
@@ -26,6 +68,104 @@ export default function SettingsScreen() {
       router.replace('/(auth)/login');
     } catch (error) {
       Alert.alert('Could not sign out', error instanceof Error ? error.message : 'Try again.');
+    }
+  }
+
+  async function handleSaveRa() {
+    if (!profile?.id) return;
+    const trimmedUser = raUsername.trim();
+    const trimmedKey = raKey.trim();
+    if (!trimmedUser || !trimmedKey) {
+      setRaError('Enter your RetroAchievements username and Web API key.');
+      return;
+    }
+    setRaSaving(true);
+    setRaError(undefined);
+    setRaMessage(undefined);
+    try {
+      const summary = await verifyRaAccount({ username: trimmedUser, apiKey: trimmedKey });
+      if (!supabase) {
+        throw new Error('Supabase is not configured on this build.');
+      }
+      const { error: secretError } = await supabase.from('user_secrets').upsert(
+        {
+          user_id: profile.id,
+          ra_web_api_key: trimmedKey,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: 'user_id' }
+      );
+      if (secretError) throw secretError;
+      await patchProfile({ raUsername: trimmedUser });
+      setRaMessage(
+        `Linked @${summary.user} · ${summary.totalPoints.toLocaleString()} points · rank #${summary.rank ?? '—'}.`
+      );
+      setRaKey('');
+    } catch (error) {
+      setRaError(error instanceof Error ? error.message : 'Could not link RetroAchievements account.');
+    } finally {
+      setRaSaving(false);
+    }
+  }
+
+  async function handleUnlinkRa() {
+    if (!profile?.id) return;
+    setRaSaving(true);
+    setRaError(undefined);
+    setRaMessage(undefined);
+    try {
+      if (supabase) {
+        await supabase.from('user_secrets').delete().eq('user_id', profile.id);
+      }
+      await patchProfile({ raUsername: undefined });
+      setRaUsername('');
+      setRaKey('');
+      setRaMessage('RetroAchievements unlinked.');
+    } catch (error) {
+      setRaError(error instanceof Error ? error.message : 'Could not unlink account.');
+    } finally {
+      setRaSaving(false);
+    }
+  }
+
+  async function handleTogglePush(value: boolean) {
+    if (!profile?.id || pushBusy) return;
+    setPushBusy(true);
+    try {
+      if (value) {
+        const result = await requestPushPermission();
+        if (result.status === 'granted') {
+          await savePushToken(profile.id, result.token, true);
+          setPushStatus('on');
+        } else if (result.status === 'denied') {
+          setPushStatus('denied');
+          Alert.alert(
+            'Notifications blocked',
+            'Enable PocketNet notifications in your device settings to receive pings.'
+          );
+        } else {
+          setPushStatus('unsupported');
+        }
+      } else {
+        await setPushEnabled(profile.id, false);
+        setPushStatus('off');
+      }
+    } catch (error) {
+      Alert.alert('Push error', error instanceof Error ? error.message : 'Try again.');
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
+  async function handleTogglePrivacy(value: boolean) {
+    if (!profile?.id || privacyBusy) return;
+    setPrivacyBusy(true);
+    try {
+      await patchProfile({ isPrivate: value });
+    } catch (error) {
+      Alert.alert('Privacy', error instanceof Error ? error.message : 'Could not update privacy.');
+    } finally {
+      setPrivacyBusy(false);
     }
   }
 
@@ -47,6 +187,113 @@ export default function SettingsScreen() {
         action={<Button label="Edit profile" variant="secondary" onPress={() => router.push('/edit-profile')} />}
       />
 
+      <GlowCard tone="focus">
+        <Row>
+          <Trophy color={colors.warning} size={22} />
+          <Stack gap={2} style={styles.groupCopy}>
+            <AppText variant="sectionTitle">RetroAchievements</AppText>
+            <AppText color={colors.textSecondary}>
+              Link your RA account to show your achievements on your profile. Your Web API key is stored
+              owner-only and never exposed to other players.
+            </AppText>
+            {profile?.raUsername ? (
+              <AppText variant="metadata" color={colors.textMuted}>Linked as @{profile.raUsername}</AppText>
+            ) : null}
+          </Stack>
+        </Row>
+        <Stack gap={spacing.xs}>
+          <TextField
+            label="RA username"
+            value={raUsername}
+            onChangeText={setRaUsername}
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="RetroAchievements username"
+          />
+          <TextField
+            label="RA Web API key"
+            value={raKey}
+            onChangeText={setRaKey}
+            autoCapitalize="none"
+            autoCorrect={false}
+            secureTextEntry
+            placeholder="Paste your Web API key"
+          />
+          {raError ? <AppText variant="caption" color={colors.danger}>{raError}</AppText> : null}
+          {raMessage ? <AppText variant="caption" color={colors.success}>{raMessage}</AppText> : null}
+          <Row>
+            <Button
+              label={profile?.raUsername ? 'Update link' : 'Link account'}
+              loading={raSaving}
+              onPress={() => void handleSaveRa()}
+            />
+            {profile?.raUsername ? (
+              <Button label="Unlink" variant="ghost" compact onPress={() => void handleUnlinkRa()} />
+            ) : null}
+          </Row>
+          <AppText variant="metadata" color={colors.textMuted}>
+            Get your Web API key from retroachievements.org → Settings → Keys.
+          </AppText>
+        </Stack>
+      </GlowCard>
+
+      <GlowCard tone="purple">
+        <Row>
+          <Lock color={colors.accentPurple} size={22} />
+          <Stack gap={2} style={styles.groupCopy}>
+            <AppText variant="sectionTitle">Privacy lock</AppText>
+            <AppText color={colors.textSecondary}>
+              When locked, only friends and followers can see your posts, replies, friends, followers,
+              communities, and achievements.
+            </AppText>
+          </Stack>
+          <Switch
+            value={Boolean(profile?.isPrivate)}
+            onValueChange={(value) => void handleTogglePrivacy(value)}
+            trackColor={{ true: colors.accentPurple, false: colors.border }}
+            thumbColor={colors.surfaceStrong}
+          />
+        </Row>
+      </GlowCard>
+
+      <GlowCard tone="cyan">
+        <Row>
+          <ImageDown color={colors.accentCyan} size={22} />
+          <Stack gap={2} style={styles.groupCopy}>
+            <AppText variant="sectionTitle">Export profile card</AppText>
+            <AppText color={colors.textSecondary}>
+              Save a shareable PNG. Compact card 1080 × 1620 px · full card 1080 × 2400 px · 48 px border.
+            </AppText>
+          </Stack>
+        </Row>
+        <Button label="Open card exporter" variant="secondary" onPress={() => router.push('/export-card' as never)} />
+      </GlowCard>
+
+      <GlowCard tone="pink">
+        <Row>
+          <Bell color={colors.accentPink} size={22} />
+          <Stack gap={2} style={styles.groupCopy}>
+            <AppText variant="sectionTitle">Push notifications</AppText>
+            <AppText color={colors.textSecondary}>
+              Receive a ping when someone follows you, accepts your friend request, or replies to you.
+            </AppText>
+            <AppText variant="metadata" color={colors.textMuted}>
+              Status: {pushStatus === 'on' ? 'on' : pushStatus === 'denied' ? 'blocked by device' : pushStatus === 'unsupported' ? 'unavailable on this device' : 'off'}
+            </AppText>
+          </Stack>
+          <Switch
+            value={pushStatus === 'on'}
+            onValueChange={(value) => void handleTogglePush(value)}
+            disabled={pushBusy || pushStatus === 'unsupported'}
+            trackColor={{ true: colors.accentPink, false: colors.border }}
+            thumbColor={colors.surfaceStrong}
+          />
+        </Row>
+        <AppText variant="metadata" color={colors.textMuted}>
+          Tokens are stored in PocketNet&apos;s push_tokens table. Server-side delivery rolls out in a follow-up build.
+        </AppText>
+      </GlowCard>
+
       <SettingsGroup
         icon={ShieldCheck}
         title="Security"
@@ -62,9 +309,8 @@ export default function SettingsScreen() {
 
       <SettingsGroup
         icon={Bell}
-        title="Notifications"
-        body="In-app notifications are available for friend and social activity. Push notifications are planned for a later production milestone."
-        meta="Push: documented future work"
+        title="In-app notifications"
+        body="Friend requests, follows, replies, and community pings live in your in-app notifications tray. Push delivery is configured above."
       />
 
       <GlowCard tone="cyan">
@@ -126,8 +372,35 @@ export default function SettingsScreen() {
         <Button label="Sign out" icon={LogOut} variant="danger" onPress={() => void handleSignOut()} />
       </GlowCard>
 
+      <GlowCard tone="focus">
+        <Row>
+          <Sparkles color={colors.focus} size={22} />
+          <Stack gap={2} style={styles.groupCopy}>
+            <AppText variant="sectionTitle">Updates</AppText>
+            <AppText color={colors.textSecondary}>What changed in the latest PocketNet builds.</AppText>
+          </Stack>
+        </Row>
+        <Stack gap={spacing.sm}>
+          {RELEASES.map((release) => (
+            <View key={release.version} style={styles.releaseCard}>
+              <Row style={{ justifyContent: 'space-between' }}>
+                <AppText variant="cardTitle">v{release.version} · {release.title}</AppText>
+                <AppText variant="metadata" color={colors.textMuted}>{release.date}</AppText>
+              </Row>
+              <Stack gap={4} style={{ marginTop: spacing.xs }}>
+                {release.highlights.map((line) => (
+                  <AppText key={line} variant="caption" color={colors.textSecondary}>
+                    · {line}
+                  </AppText>
+                ))}
+              </Stack>
+            </View>
+          ))}
+        </Stack>
+      </GlowCard>
+
       <AppText variant="metadata" color={colors.textMuted} style={styles.version}>
-        PocketNet beta 0.1.0 · Device-adaptive Android handheld social app · Standalone project, not affiliated with AYN or frontend projects.
+        PocketNet · Device-adaptive Android handheld social app · Standalone project, not affiliated with AYN or frontend projects.
       </AppText>
     </Screen>
   );
@@ -190,6 +463,13 @@ const styles = StyleSheet.create({
   optionDotActive: {
     borderColor: colors.accentCyan,
     backgroundColor: colors.accentCyan
+  },
+  releaseCard: {
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface
   }
 });
 

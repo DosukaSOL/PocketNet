@@ -31,6 +31,7 @@ import { colors, radius, spacing } from '@/design/tokens';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { FRONTENDS, HANDHELDS, SAMPLE_GAMES, SYSTEMS } from '@/lib/catalog';
 import { pickImage, uploadImage } from '@/lib/media';
+import { requestPushPermission, savePushToken } from '@/lib/push';
 
 type StepKey = 'avatar' | 'banner' | 'about' | 'device' | 'systems' | 'socials' | 'preview';
 
@@ -157,6 +158,17 @@ export default function OnboardingScreen() {
           ...(website.trim() ? { website: website.trim() } : {})
         }
       });
+      // Best-effort: ask for push permission once they finish onboarding so new
+      // accounts opt in by default. Failures are intentionally swallowed — push
+      // is enhancement-only.
+      try {
+        const result = await requestPushPermission();
+        if (result.status === 'granted' && profile?.id) {
+          await savePushToken(profile.id, result.token, true);
+        }
+      } catch {
+        // ignore — push is optional
+      }
       router.replace('/(tabs)/home');
     } catch (error) {
       Alert.alert('Could not save onboarding', error instanceof Error ? error.message : 'Try again.');

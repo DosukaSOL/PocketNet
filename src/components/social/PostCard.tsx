@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { Flag, Heart, MessageCircle, MoreHorizontal, Pin, Send, Trash2 } from 'lucide-react-native';
 import { useMemo, useRef, useState } from 'react';
-import { Alert, Animated, StyleSheet, View } from 'react-native';
+import { Alert, Animated, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Avatar, Badge, Button, GlowCard, IconButton, Reveal, Row, Stack, TextField } from '@/components/ui';
 import { DeviceBadge, FrontendBadge } from '@/components/device';
@@ -70,28 +71,41 @@ export function PostCard({ post, compact = false }: { post: Post; compact?: bool
     ]);
   }
 
+  function openAuthor() {
+    if (!author) return;
+    if (author.id === profile?.id) {
+      router.push('/(tabs)/profile' as never);
+    } else {
+      router.push(`/user/${author.id}` as never);
+    }
+  }
+
   return (
     <Reveal>
       <GlowCard tone={hasLiked ? 'pink' : dualScreenAuthor ? 'focus' : 'cyan'} style={[styles.card, compact && styles.compactCard]}>
       <Row style={styles.header}>
-        <Avatar
-          label={author?.displayName ?? 'PocketNet user'}
-          uri={author?.avatarUrl}
-          size={compact ? 42 : 50}
-          status={author?.currentGame ? 'online' : 'offline'}
-          focus={dualScreenAuthor}
-        />
-        <Stack gap={2} style={styles.authorBlock}>
-          <Row style={styles.authorLine}>
-            <AppText variant="bodyStrong" numberOfLines={1}>
-              {author?.displayName ?? 'PocketNet user'}
+        <Pressable onPress={openAuthor} hitSlop={6} accessibilityRole="button" accessibilityLabel={`Open ${author?.displayName ?? 'user'} profile`}>
+          <Avatar
+            label={author?.displayName ?? 'PocketNet user'}
+            uri={author?.avatarUrl}
+            size={compact ? 42 : 50}
+            status={author?.currentGame ? 'online' : 'offline'}
+            focus={dualScreenAuthor}
+          />
+        </Pressable>
+        <Pressable onPress={openAuthor} style={styles.authorBlock} hitSlop={6} accessibilityRole="button">
+          <Stack gap={2}>
+            <Row style={styles.authorLine}>
+              <AppText variant="bodyStrong" numberOfLines={1}>
+                {author?.displayName ?? 'PocketNet user'}
+              </AppText>
+              {post.isPinned ? <Pin color={colors.warning} size={14} /> : null}
+            </Row>
+            <AppText variant="metadata" color={colors.textMuted} numberOfLines={1}>
+              @{author?.username ?? 'unknown'} · {timestamp}
             </AppText>
-            {post.isPinned ? <Pin color={colors.warning} size={14} /> : null}
-          </Row>
-          <AppText variant="metadata" color={colors.textMuted} numberOfLines={1}>
-            @{author?.username ?? 'unknown'} · {timestamp}
-          </AppText>
-        </Stack>
+          </Stack>
+        </Pressable>
         <IconButton icon={MoreHorizontal} label="Post actions" onPress={handleReport} />
       </Row>
 

@@ -58,6 +58,12 @@ type SocialContextValue = {
   getCommunity: (id?: ID) => Community | undefined;
   getCommunityPosts: (communityId: ID) => Post[];
   getProfilePosts: (profileId: ID) => Post[];
+  getProfileReplies: (profileId: ID) => { comment: Post['comments'][number]; post: Post }[];
+  getCommunitiesOf: (profileId: ID) => Community[];
+  getFriendsOf: (profileId: ID) => Profile[];
+  getFollowersOf: (profileId: ID) => Profile[];
+  getFollowingOf: (profileId: ID) => Profile[];
+  canViewProfile: (profileId: ID) => boolean;
   getHomeFeed: () => Post[];
   getExploreFeed: () => Post[];
   getFriends: () => Profile[];
@@ -246,6 +252,76 @@ export function SocialProvider({ children }: PropsWithChildren) {
   const getProfilePosts = useCallback(
     (profileId: ID) => sortNewest(posts.filter((post) => post.authorId === profileId)),
     [posts]
+  );
+
+  const getProfileReplies = useCallback(
+    (profileId: ID) => {
+      const rows: { comment: Post['comments'][number]; post: Post }[] = [];
+      for (const post of posts) {
+        if (post.authorId === profileId) continue; // replies only — not own posts
+        for (const comment of post.comments) {
+          if (comment.authorId === profileId) {
+            rows.push({ comment, post });
+          }
+        }
+      }
+      return rows.sort(
+        (left, right) =>
+          new Date(right.comment.createdAt).getTime() - new Date(left.comment.createdAt).getTime()
+      );
+    },
+    [posts]
+  );
+
+  const getCommunitiesOf = useCallback(
+    (profileId: ID) => communities.filter((community) => community.memberIds.includes(profileId)),
+    [communities]
+  );
+
+  const getFriendsOf = useCallback(
+    (profileId: ID) => {
+      const ids = friendships
+        .filter((f) => f.userAId === profileId || f.userBId === profileId)
+        .map((f) => (f.userAId === profileId ? f.userBId : f.userAId));
+      return profiles.filter((item) => ids.includes(item.id) && !isBlocked(item.id));
+    },
+    [friendships, isBlocked, profiles]
+  );
+
+  const getFollowersOf = useCallback(
+    (profileId: ID) => {
+      const ids = new Set(follows.filter((f) => f.followeeId === profileId).map((f) => f.followerId));
+      return profiles.filter((item) => ids.has(item.id) && !isBlocked(item.id));
+    },
+    [follows, isBlocked, profiles]
+  );
+
+  const getFollowingOf = useCallback(
+    (profileId: ID) => {
+      const ids = new Set(follows.filter((f) => f.followerId === profileId).map((f) => f.followeeId));
+      return profiles.filter((item) => ids.has(item.id) && !isBlocked(item.id));
+    },
+    [follows, isBlocked, profiles]
+  );
+
+  const canViewProfile = useCallback(
+    (profileId: ID) => {
+      const target = profiles.find((item) => item.id === profileId);
+      if (!target) return true; // unknown — let the screen surface its own empty state
+      if (!target.isPrivate) return true;
+      if (profileId === currentUserId) return true;
+      const friend = friendships.some(
+        (f) =>
+          (f.userAId === currentUserId && f.userBId === profileId) ||
+          (f.userBId === currentUserId && f.userAId === profileId)
+      );
+      if (friend) return true;
+      const follower = follows.some(
+        (f) => f.followerId === currentUserId && f.followeeId === profileId
+      );
+      return follower;
+    },
+    [currentUserId, follows, friendships, profiles]
   );
 
   const getFriends = useCallback(() => {
@@ -986,6 +1062,12 @@ export function SocialProvider({ children }: PropsWithChildren) {
       getCommunity,
       getCommunityPosts,
       getProfilePosts,
+      getProfileReplies,
+      getCommunitiesOf,
+      getFriendsOf,
+      getFollowersOf,
+      getFollowingOf,
+      canViewProfile,
       getHomeFeed,
       getExploreFeed,
       getFriends,
@@ -1040,6 +1122,12 @@ export function SocialProvider({ children }: PropsWithChildren) {
       getOutgoingRequests,
       getProfile,
       getProfilePosts,
+      getProfileReplies,
+      getCommunitiesOf,
+      getFriendsOf,
+      getFollowersOf,
+      getFollowingOf,
+      canViewProfile,
       isFollowing,
       isLoading,
       joinCommunity,

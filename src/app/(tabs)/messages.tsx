@@ -1,7 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { MessageCircle, UserPlus } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import {
   AppText,
@@ -51,7 +51,7 @@ export default function MessagesTab() {
   }, [getProfile, profile, threads]);
 
   return (
-    <Screen>
+    <Screen scroll refreshing={refreshing || isLoading} onRefresh={() => void onRefresh()}>
       <Stack gap={spacing.lg}>
         <GlowCard tone="cyan">
           <Stack gap={spacing.xs}>
@@ -77,9 +77,6 @@ export default function MessagesTab() {
             data={enriched}
             keyExtractor={(item) => item.thread.id}
             scrollEnabled={false}
-            refreshControl={
-              <RefreshControl refreshing={refreshing || isLoading} onRefresh={onRefresh} tintColor={colors.accentCyan} />
-            }
             ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
             renderItem={({ item }) => {
               const { thread, other } = item;

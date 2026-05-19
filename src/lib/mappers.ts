@@ -39,6 +39,9 @@ export function profileFromRow(row: ProfileRow): Profile {
     setupNotes: row.setup_notes ? String(row.setup_notes) : undefined,
     currentGame: row.current_game ? String(row.current_game) : undefined,
     currentStatus: row.current_status ? String(row.current_status) : undefined,
+    raUsername: row.ra_username ? String(row.ra_username) : undefined,
+    isPrivate: Boolean(row.is_private),
+    cardBorder: row.card_border ? String(row.card_border) : 'classic',
     lastSeenAt: row.last_seen_at ? String(row.last_seen_at) : undefined,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at)
@@ -66,6 +69,9 @@ export function profileToRowPatch(profile: Partial<Profile>) {
     setup_notes: profile.setupNotes,
     current_game: profile.currentGame,
     current_status: profile.currentStatus,
+    ra_username: profile.raUsername,
+    is_private: profile.isPrivate,
+    card_border: profile.cardBorder,
     updated_at: new Date().toISOString()
   };
 }

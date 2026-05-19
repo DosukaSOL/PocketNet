@@ -4,20 +4,27 @@ import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { BrandMark } from '@/components/BrandMark';
-import { CommunityCard } from '@/components/CommunityCard';
-import { PostCard } from '@/components/PostCard';
 import { ProfileHeader, type ProfileTab } from '@/components/ProfileHeader';
-import { SetupCard } from '@/components/social/SetupCard';
-import { UserCard } from '@/components/social/UserCard';
-import { AppText, Button, EmptyState, Row, Screen, Stack, StatPill } from '@/components/ui';
+import { ProfileTabContent } from '@/components/social/ProfileTabContent';
+import { AppText, Button, EmptyState, Row, Screen, Stack } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { useRetroAchievements } from '@/hooks/useRetroAchievements';
 import { usePocketData } from '@/features/social/SocialProvider';
-import { colors, spacing } from '@/design/tokens';
+import { colors } from '@/design/tokens';
 
 export default function ProfileScreen() {
   const { profile } = useAuth();
-  const { getProfilePosts, getFriends, communities, notifications, joinCommunity, leaveCommunity } = usePocketData();
+  const {
+    getProfilePosts,
+    getProfileReplies,
+    getFriendsOf,
+    getFollowersOf,
+    getCommunitiesOf,
+    joinCommunity,
+    leaveCommunity
+  } = usePocketData();
   const [tab, setTab] = useState<ProfileTab>('posts');
+  const ra = useRetroAchievements(profile?.raUsername);
 
   if (!profile) {
     return (
@@ -32,9 +39,10 @@ export default function ProfileScreen() {
   }
 
   const posts = getProfilePosts(profile.id);
-  const friends = getFriends();
-  const memberCommunities = communities.filter((community) => community.memberIds.includes(profile.id));
-  const unread = notifications.filter((notification) => !notification.readAt);
+  const replies = getProfileReplies(profile.id);
+  const friends = getFriendsOf(profile.id);
+  const followers = getFollowersOf(profile.id);
+  const memberCommunities = getCommunitiesOf(profile.id);
 
   return (
     <Screen scroll>
@@ -47,90 +55,36 @@ export default function ProfileScreen() {
         <Button label="Settings" icon={Settings} compact variant="secondary" onPress={() => router.push('/settings')} />
       </Row>
 
-      <Row style={styles.stats}>
-        <StatPill label="Feed" value={posts.length} />
-        <StatPill label="Friends" value={friends.length} />
-        <StatPill label="Unread" value={unread.length} />
-      </Row>
-
       <ProfileHeader
         profile={profile}
         isCurrentUser
         postCount={posts.length}
+        replyCount={replies.length}
         friendCount={friends.length}
+        followerCount={followers.length}
         communityCount={memberCommunities.length}
+        achievementCount={ra.achievements.length}
+        achievementPoints={ra.points}
         activeTab={tab}
         onTabChange={setTab}
         onEdit={() => router.push('/edit-profile')}
       />
 
-      {tab === 'posts' ? (
-        <Stack gap={spacing.md}>
-          <Row style={styles.sectionHeader}>
-            <AppText variant="sectionTitle">Profile Posts</AppText>
-            <Button label="New post" compact onPress={() => router.push('/(tabs)/create')} />
-          </Row>
-          {posts.length ? (
-            posts.map((post) => <PostCard key={post.id} post={post} />)
-          ) : (
-            <EmptyState
-              title="No posts yet"
-              body="Share your setup, a status update, or a screenshot from the Post tab."
-              action={<Button label="Create first post" onPress={() => router.push('/(tabs)/create')} />}
-            />
-          )}
-        </Stack>
-      ) : null}
-
-      {tab === 'setup' ? (
-        <Stack gap={spacing.md}>
-          <SetupCard profile={profile} />
-          <Stack>
-            <AppText variant="sectionTitle">Friends</AppText>
-            {friends.length ? (
-              friends.map((friend) => (
-                <UserCard
-                  key={friend.id}
-                  profile={friend}
-                  actionLabel="View"
-                  onOpen={() => router.push(`/user/${friend.id}`)}
-                  onAction={() => router.push(`/user/${friend.id}`)}
-                />
-              ))
-            ) : (
-              <AppText color={colors.textMuted}>
-                No friends yet. Discover players to make this profile feel lived-in.
-              </AppText>
-            )}
-          </Stack>
-        </Stack>
-      ) : null}
-
-      {tab === 'communities' ? (
-        <Stack gap={spacing.md}>
-          <Row style={styles.sectionHeader}>
-            <AppText variant="sectionTitle">Communities</AppText>
-            <Button label="Discover" compact variant="secondary" onPress={() => router.push('/(tabs)/discover')} />
-          </Row>
-          {memberCommunities.length ? (
-            memberCommunities.map((community) => (
-              <CommunityCard
-                key={community.id}
-                community={community}
-                onOpen={() => router.push(`/community/${community.id}`)}
-                onJoin={() => void joinCommunity(community.id)}
-                onLeave={() => void leaveCommunity(community.id)}
-              />
-            ))
-          ) : (
-            <EmptyState
-              title="No communities yet"
-              body="Join a place for your device, favorite frontend, or current handheld obsession."
-              action={<Button label="Find communities" onPress={() => router.push('/(tabs)/discover')} />}
-            />
-          )}
-        </Stack>
-      ) : null}
+      <ProfileTabContent
+        profile={profile}
+        activeTab={tab}
+        isCurrentUser
+        posts={posts}
+        replies={replies}
+        friends={friends}
+        followers={followers}
+        communities={memberCommunities}
+        canView
+        isFriend
+        isFollower
+        onJoinCommunity={(id) => void joinCommunity(id)}
+        onLeaveCommunity={(id) => void leaveCommunity(id)}
+      />
     </Screen>
   );
 }
@@ -142,12 +96,5 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 1,
     minWidth: 0
-  },
-  stats: {
-    flexWrap: 'wrap'
-  },
-  sectionHeader: {
-    justifyContent: 'space-between',
-    alignItems: 'center'
   }
 });

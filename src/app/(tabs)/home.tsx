@@ -50,7 +50,7 @@ export default function HomeScreen() {
   return (
     <Screen scroll refreshing={isLoading} onRefresh={() => void refresh()}>
       <Stack gap={spacing.sm} style={styles.heroBlock}>
-        <BrandMark size={80} />
+        <BrandMark size={132} />
         <AppText variant="display" style={styles.wordmark}>
           PocketNet
         </AppText>

@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.2.0 - Profiles, achievements, push, exports
+
+v1.2 turns the profile into the heart of the app. Profile headers now surface six tappable stats — posts, replies, friends, followers, communities, achievements — backed by RetroAchievements integration, a privacy lock for sensitive profiles, push notifications opt-in, and a pixel-perfect profile-card exporter.
+
+### New features
+
+- **RetroAchievements integration.** Link your RA account from Settings → RetroAchievements (username + Web API key, key stored owner-only via the new `user_secrets` table with RLS). Achievements appear on your profile with badge art, point totals, and recent unlock history pulled live from `API_GetUserSummary.php` / `API_GetUserRecentAchievements.php`.
+- **Profile counts row.** Heart (followers), handshake (friends), message (replies), users (communities), trophy (achievements), and posts. Every chip is tappable and scrolls the matching section.
+- **Replies section.** A new tab on every profile that lists the user's comments on other people's posts, with the parent post snippet for context.
+- **"Places" → "Communities".** Naming is consistent across the profile, header chips, and copy.
+- **Privacy lock.** Toggle in Settings → Privacy lock. Locked profiles only reveal posts, replies, friends, followers, communities, and achievements to confirmed friends and followers. Enforced server-side via the new `can_view_profile(uuid)` SECURITY DEFINER RPC.
+- **Profile card exporter.** Settings → Export profile card. Pick a border (Classic, Aurora, Sunset, CRT, Holo, Midnight). Toggle the full card (off by default) to include posts, friends, followers, communities, and achievements. **Compact 1080 × 1620 px (inner 984 × 1524) / Full 1080 × 2400 px (inner 984 × 2304) / 48 px border** — exported as PNG straight to your gallery. Only the card is captured; surrounding UI is excluded.
+- **Push notifications.** New `push_tokens` table with owner-only RLS, opt-in prompt on first onboarding, toggle in Settings → Push notifications. Server-side delivery wiring lands in a follow-up build.
+- **Tap to open profile from a post.** Tapping the avatar or display name on any PostCard navigates to the author's profile (or your own profile when it's you).
+- **Bigger Home BrandMark.** Wordmark/logo on the Home tab is now visibly larger.
+- **Updates section in Settings.** In-app release notes — short and snappy, refreshed every build.
+- **Sessions survive APK updates.** AsyncStorage-backed Supabase auth persists across reinstalls of the same app id, so v1.2 users keep their login when updating from v1.1.
+
+### Fixes
+
+- **Messages tab now scrolls.** Outer Screen wrapper takes scroll responsibility; FlatList is `scrollEnabled={false}` to avoid nested-scroll conflicts.
+
+### Security
+
+- New `user_secrets` table: owner-only RLS (`user_id = auth.uid()`) for select/insert/update/delete, revoked from `anon`. The RA Web API key is never logged or exposed in URLs at app boundaries — calls use the standard `z`/`y` query parameters and the value is read only from this table.
+- New `push_tokens` table: owner-only RLS, unique on `(user_id, token)`, platform constrained to `'android' | 'ios' | 'web'`.
+- New `profiles.is_private` column + `can_view_profile(uuid)` SECURITY DEFINER function returning a boolean (never the underlying rows).
+- `npm run qa` (typecheck + lint + jest + secret scan) is clean.
+
+### Versioning
+
+- Bumped `version` → `1.2.0` and Android `versionCode` → `12`.
+- Added `expo-notifications` and `expo-media-library` plugins.
+
 ## 1.1.0 - For You + Explore + Follows
 
 v1.1 turns the Home tab into a real social surface. The command-bar card is gone, the wordmark is front and center, and the feed splits into two views: the people you actually care about (For You Page) and everyone else (Explore).

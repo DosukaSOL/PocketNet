@@ -15,7 +15,7 @@
     <img src="https://img.shields.io/badge/build-Expo%20SDK%2055-000020?style=for-the-badge&logo=expo&logoColor=white" alt="Expo SDK 55">
     <img src="https://img.shields.io/badge/backend-Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
     <img src="https://img.shields.io/badge/release-APK%20first-4D7CFF?style=for-the-badge" alt="APK first">
-    <img src="https://img.shields.io/badge/status-v1.1%20stable-7C3AED?style=for-the-badge" alt="v1.1 stable">
+    <img src="https://img.shields.io/badge/status-v1.2%20stable-7C3AED?style=for-the-badge" alt="v1.2 stable">
   </p>
 
   <p>
@@ -46,7 +46,23 @@ PocketNet is standalone and is not affiliated with AYN, Cocoon, Daijisho, ES-DE,
 
 ## Beta Status — What Works & What Doesn't
 
-PocketNet **v1.1** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+PocketNet **v1.2** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+
+### What's new in v1.2
+
+- **RetroAchievements integration** — link your RA account from Settings, see your achievements (badge art, points, recent unlocks) right on your profile. RA Web API keys live in a new `user_secrets` table with owner-only RLS.
+- **Profile counts row** — Heart (followers), handshake (friends), message (replies), users (communities), trophy (achievements), and posts. Every chip is tappable and switches the tab below the header.
+- **Replies section** — a new tab on every profile listing the user's comments on other people's posts (with the parent post for context).
+- **"Places" → "Communities"** — naming cleaned up across the app.
+- **Privacy lock** — Settings → Privacy lock. When on, only friends + followers can see your posts, replies, friends, followers, communities, and achievements. Enforced via the new `can_view_profile(uuid)` SECURITY DEFINER RPC.
+- **Profile card exporter** — Settings → Export profile card. Pick a border (Classic, Aurora, Sunset, CRT, Holo, Midnight), toggle the full card (off by default), and save a PNG to your gallery. **Compact 1080 × 1620 px (inner 984 × 1524) · Full 1080 × 2400 px (inner 984 × 2304) · 48 px border.** Only the card is captured — surrounding UI is excluded.
+- **Push notifications** — opt-in on first onboarding, toggle anytime in Settings. New `push_tokens` table with owner-only RLS. Server-side delivery wiring is staged but lands in a follow-up build.
+- **Tap any avatar or name on a post** to jump to that profile (or your own Profile tab when it's you).
+- **Bigger BrandMark** on the Home tab.
+- **Updates section in Settings** — short and snappy patch notes, refreshed every build.
+- **Sessions survive APK updates** — AsyncStorage-backed Supabase auth, no re-login when you update from v1.1.
+
+> ⚠️ Push delivery is **opt-in storage of tokens only** in v1.2. Tokens are saved against your account but PocketNet does not yet send pushes from the backend — that lands in a follow-up build.
 
 ### What's new in v1.1
 

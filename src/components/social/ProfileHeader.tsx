@@ -1,18 +1,36 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { RadioTower, ShieldCheck } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import {
+  FileText,
+  Handshake,
+  Heart,
+  MessageSquare,
+  RadioTower,
+  ShieldCheck,
+  Trophy,
+  Users
+} from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Avatar, Badge, Button, GlowCard, Row, SegmentedTabs, Stack } from '@/components/ui';
 import { DeviceBadge, FrontendBadge } from '@/components/device';
 import { SetupCard } from '@/components/social/SetupCard';
 import { ProfileSocialLinks } from '@/components/social/ProfileSocialLinks';
-import { ProfileStats } from '@/components/social/ProfileStats';
 import { colors, gradients, radius, shadows, spacing } from '@/design/tokens';
 import { getDeviceProfile, isDualScreenDevice } from '@/lib/devices';
 import type { Profile } from '@/types/domain';
 
-export type ProfileTab = 'posts' | 'setup' | 'communities';
+export type ProfileTab = 'posts' | 'replies' | 'friends' | 'followers' | 'communities' | 'achievements';
+
+export const PROFILE_TABS: { label: string; value: ProfileTab }[] = [
+  { label: 'Posts', value: 'posts' },
+  { label: 'Replies', value: 'replies' },
+  { label: 'Friends', value: 'friends' },
+  { label: 'Followers', value: 'followers' },
+  { label: 'Communities', value: 'communities' },
+  { label: 'Achievements', value: 'achievements' }
+];
 
 export function ProfileHeader({
   profile,
@@ -21,8 +39,12 @@ export function ProfileHeader({
   hasIncomingRequest,
   hasOutgoingRequest,
   postCount = 0,
+  replyCount = 0,
   friendCount = 0,
+  followerCount = 0,
   communityCount = 0,
+  achievementCount = 0,
+  achievementPoints,
   activeTab,
   onTabChange,
   onEdit,
@@ -37,8 +59,12 @@ export function ProfileHeader({
   hasIncomingRequest?: boolean;
   hasOutgoingRequest?: boolean;
   postCount?: number;
+  replyCount?: number;
   friendCount?: number;
+  followerCount?: number;
   communityCount?: number;
+  achievementCount?: number;
+  achievementPoints?: number;
   activeTab?: ProfileTab;
   onTabChange?: (tab: ProfileTab) => void;
   onEdit?: () => void;
@@ -88,6 +114,7 @@ export function ProfileHeader({
                 {profile.displayName}
               </AppText>
               {dualScreen ? <ShieldCheck color={colors.focus} size={18} /> : null}
+              {profile.isPrivate ? <Badge label="Private" tone="warning" compact /> : null}
             </Row>
             <AppText variant="caption" color={colors.textMuted}>
               @{profile.username}
@@ -103,11 +130,63 @@ export function ProfileHeader({
           {profile.currentGame ? (
             <Badge label={`Playing ${profile.currentGame}`} tone="pink" icon={RadioTower} />
           ) : null}
+          {profile.raUsername ? (
+            <Badge label={`RA · ${profile.raUsername}`} tone="warning" icon={Trophy} compact />
+          ) : null}
         </Row>
 
         <ProfileSocialLinks profile={profile} />
 
-        <ProfileStats posts={postCount} friends={friendCount} communities={communityCount} />
+        <View style={styles.statsRow}>
+          <StatChip
+            icon={FileText}
+            label="Posts"
+            value={postCount}
+            tint={colors.accentCyan}
+            active={activeTab === 'posts'}
+            onPress={() => onTabChange?.('posts')}
+          />
+          <StatChip
+            icon={MessageSquare}
+            label="Replies"
+            value={replyCount}
+            tint={colors.accentCyan}
+            active={activeTab === 'replies'}
+            onPress={() => onTabChange?.('replies')}
+          />
+          <StatChip
+            icon={Handshake}
+            label="Friends"
+            value={friendCount}
+            tint={colors.accentPurple}
+            active={activeTab === 'friends'}
+            onPress={() => onTabChange?.('friends')}
+          />
+          <StatChip
+            icon={Heart}
+            label="Followers"
+            value={followerCount}
+            tint={colors.accentPink}
+            active={activeTab === 'followers'}
+            onPress={() => onTabChange?.('followers')}
+          />
+          <StatChip
+            icon={Users}
+            label="Communities"
+            value={communityCount}
+            tint={colors.accentCyan}
+            active={activeTab === 'communities'}
+            onPress={() => onTabChange?.('communities')}
+          />
+          <StatChip
+            icon={Trophy}
+            label={achievementPoints != null && profile.raUsername ? `${achievementPoints}pts` : 'Achievements'}
+            value={achievementCount}
+            tint={colors.warning}
+            active={activeTab === 'achievements'}
+            onPress={() => onTabChange?.('achievements')}
+          />
+        </View>
 
         <Row style={styles.actions}>
           {isCurrentUser ? (
@@ -131,17 +210,43 @@ export function ProfileHeader({
       <SetupCard profile={profile} compact />
 
       {activeTab && onTabChange ? (
-        <SegmentedTabs
-          value={activeTab}
-          onChange={onTabChange}
-          tabs={[
-            { label: 'Posts', value: 'posts' },
-            { label: 'Setup', value: 'setup' },
-            { label: 'Communities', value: 'communities' }
-          ]}
-        />
+        <SegmentedTabs value={activeTab} onChange={onTabChange} tabs={PROFILE_TABS} />
       ) : null}
     </Stack>
+  );
+}
+
+function StatChip({
+  icon: Icon,
+  label,
+  value,
+  tint,
+  active,
+  onPress
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: number;
+  tint: string;
+  active?: boolean;
+  onPress?: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}`}
+      style={({ pressed }) => [
+        styles.statChip,
+        active && styles.statChipActive,
+        active && { borderColor: tint },
+        pressed && { opacity: 0.7 }
+      ]}
+    >
+      <Icon color={tint} size={16} />
+      <AppText variant="bodyStrong">{value}</AppText>
+      <AppText variant="caption" color={colors.textMuted}>{label}</AppText>
+    </Pressable>
   );
 }
 
@@ -189,6 +294,25 @@ const styles = StyleSheet.create({
   },
   badges: {
     flexWrap: 'wrap'
+  },
+  statsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs
+  },
+  statChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface
+  },
+  statChipActive: {
+    backgroundColor: colors.surfaceStrong
   },
   actions: {
     flexWrap: 'wrap'

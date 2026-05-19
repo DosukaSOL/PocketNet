@@ -3,24 +3,24 @@ import { ArrowLeft, MessageCircle, UserRound } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, StyleSheet } from 'react-native';
 
-import { CommunityCard } from '@/components/CommunityCard';
-import { PostCard } from '@/components/PostCard';
 import { ProfileHeader, type ProfileTab } from '@/components/ProfileHeader';
-import { SetupCard } from '@/components/social/SetupCard';
-import { Button, EmptyState, Row, Screen, Stack } from '@/components/ui';
+import { ProfileTabContent } from '@/components/social/ProfileTabContent';
+import { Button, EmptyState, Row, Screen } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useMessaging } from '@/features/messaging/MessagingProvider';
 import { usePocketData } from '@/features/social/SocialProvider';
-import { spacing } from '@/design/tokens';
+import { useRetroAchievements } from '@/hooks/useRetroAchievements';
 
 export default function UserScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
   const {
-    communities,
     getProfile,
     getProfilePosts,
-    getFriends,
+    getProfileReplies,
+    getFriendsOf,
+    getFollowersOf,
+    getCommunitiesOf,
     getIncomingRequests,
     getOutgoingRequests,
     sendFriendRequest,
@@ -28,12 +28,15 @@ export default function UserScreen() {
     blockUser,
     report,
     joinCommunity,
-    leaveCommunity
+    leaveCommunity,
+    canViewProfile,
+    isFollowing
   } = usePocketData();
   const { openThreadWith } = useMessaging();
   const [tab, setTab] = useState<ProfileTab>('posts');
   const [openingDm, setOpeningDm] = useState(false);
   const target = getProfile(id);
+  const ra = useRetroAchievements(target?.raUsername);
 
   if (!target) {
     return (
@@ -48,13 +51,18 @@ export default function UserScreen() {
     );
   }
 
-  const activeTarget = target;
-  const posts = getProfilePosts(activeTarget.id);
-  const friends = getFriends();
-  const incoming = getIncomingRequests().find((request) => request.fromUserId === activeTarget.id);
-  const outgoing = getOutgoingRequests().some((request) => request.toUserId === activeTarget.id);
-  const isFriend = friends.some((friend) => friend.id === activeTarget.id);
-  const memberCommunities = communities.filter((community) => community.memberIds.includes(activeTarget.id));
+  const isCurrentUser = target.id === profile?.id;
+  const canView = canViewProfile(target.id);
+  const posts = canView ? getProfilePosts(target.id) : [];
+  const replies = canView ? getProfileReplies(target.id) : [];
+  const friends = canView ? getFriendsOf(target.id) : [];
+  const followers = canView ? getFollowersOf(target.id) : [];
+  const memberCommunities = canView ? getCommunitiesOf(target.id) : [];
+  const incoming = getIncomingRequests().find((request) => request.fromUserId === target.id);
+  const outgoing = getOutgoingRequests().some((request) => request.toUserId === target.id);
+  const myFriends = getFriendsOf(profile?.id ?? '');
+  const isFriend = myFriends.some((friend) => friend.id === target.id);
+  const isFollower = isFollowing(target.id);
 
   function handleReport() {
     Alert.alert('Report user', 'Send this profile to moderation review?', [
@@ -62,7 +70,7 @@ export default function UserScreen() {
       {
         text: 'Report',
         style: 'destructive',
-        onPress: () => void report('user', activeTarget.id, 'User report')
+        onPress: () => void report('user', target!.id, 'User report')
       }
     ]);
   }
@@ -70,7 +78,7 @@ export default function UserScreen() {
   function handleBlock() {
     Alert.alert('Block user', 'This hides their content and removes social connections.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Block', style: 'destructive', onPress: () => void blockUser(activeTarget.id) }
+      { text: 'Block', style: 'destructive', onPress: () => void blockUser(target!.id) }
     ]);
   }
 
@@ -78,7 +86,7 @@ export default function UserScreen() {
     if (openingDm) return;
     setOpeningDm(true);
     try {
-      const threadId = await openThreadWith(activeTarget.id);
+      const threadId = await openThreadWith(target!.id);
       if (threadId) {
         router.push(`/messages/${threadId}` as never);
       } else {
@@ -95,7 +103,7 @@ export default function UserScreen() {
     <Screen scroll>
       <Row style={styles.topActions}>
         <Button label="Back" icon={ArrowLeft} compact variant="ghost" onPress={() => router.back()} />
-        {activeTarget.id !== profile?.id ? (
+        {!isCurrentUser ? (
           <Button
             label="Message"
             icon={MessageCircle}
@@ -107,56 +115,40 @@ export default function UserScreen() {
         ) : null}
       </Row>
       <ProfileHeader
-        profile={activeTarget}
-        isCurrentUser={activeTarget.id === profile?.id}
+        profile={target}
+        isCurrentUser={isCurrentUser}
         isFriend={isFriend}
         hasIncomingRequest={Boolean(incoming)}
         hasOutgoingRequest={outgoing}
         postCount={posts.length}
-        friendCount={isFriend ? friends.length : 0}
+        replyCount={replies.length}
+        friendCount={friends.length}
+        followerCount={followers.length}
         communityCount={memberCommunities.length}
+        achievementCount={ra.achievements.length}
+        achievementPoints={ra.points}
         activeTab={tab}
         onTabChange={setTab}
-        onFriend={() => void sendFriendRequest(activeTarget.id)}
+        onFriend={() => void sendFriendRequest(target.id)}
         onAccept={() => incoming && void acceptFriendRequest(incoming.id)}
         onBlock={handleBlock}
         onReport={handleReport}
       />
-
-      {tab === 'posts' ? (
-        posts.length ? (
-          posts.map((post) => <PostCard key={post.id} post={post} />)
-        ) : (
-          <EmptyState
-            title="No public posts yet"
-            body={`${activeTarget.displayName} has not shared a PocketNet update yet.`}
-            icon={MessageCircle}
-          />
-        )
-      ) : null}
-
-      {tab === 'setup' ? <SetupCard profile={activeTarget} /> : null}
-
-      {tab === 'communities' ? (
-        <Stack gap={spacing.md}>
-          {memberCommunities.length ? (
-            memberCommunities.map((community) => (
-              <CommunityCard
-                key={community.id}
-                community={community}
-                onOpen={() => router.push(`/community/${community.id}`)}
-                onJoin={() => void joinCommunity(community.id)}
-                onLeave={() => void leaveCommunity(community.id)}
-              />
-            ))
-          ) : (
-            <EmptyState
-              title="No communities shown"
-              body="This player has not joined any public PocketNet communities yet."
-            />
-          )}
-        </Stack>
-      ) : null}
+      <ProfileTabContent
+        profile={target}
+        activeTab={tab}
+        isCurrentUser={isCurrentUser}
+        posts={posts}
+        replies={replies}
+        friends={friends}
+        followers={followers}
+        communities={memberCommunities}
+        canView={canView}
+        isFriend={isFriend}
+        isFollower={isFollower}
+        onJoinCommunity={(id) => void joinCommunity(id)}
+        onLeaveCommunity={(id) => void leaveCommunity(id)}
+      />
     </Screen>
   );
 }

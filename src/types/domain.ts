@@ -30,6 +30,9 @@ export type Profile = {
   setupNotes?: string;
   currentGame?: string;
   currentStatus?: string;
+  raUsername?: string;
+  isPrivate: boolean;
+  cardBorder: string;
   lastSeenAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -152,6 +155,9 @@ export type UpdateProfileInput = Partial<
     | 'setupNotes'
     | 'currentGame'
     | 'currentStatus'
+    | 'raUsername'
+    | 'isPrivate'
+    | 'cardBorder'
   >
 > & {
   avatarUri?: string;
