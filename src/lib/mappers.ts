@@ -42,6 +42,7 @@ export function profileFromRow(row: ProfileRow): Profile {
     raUsername: row.ra_username ? String(row.ra_username) : undefined,
     isPrivate: Boolean(row.is_private),
     cardBorder: row.card_border ? String(row.card_border) : 'classic',
+    badges: stringArray(row.badges),
     lastSeenAt: row.last_seen_at ? String(row.last_seen_at) : undefined,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at)

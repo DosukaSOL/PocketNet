@@ -14,6 +14,22 @@ export type ReleaseEntry = {
 
 export const RELEASES: ReleaseEntry[] = [
   {
+    version: '1.3.0',
+    date: '2026-05-19',
+    title: 'Badges, RA login, profile cleanup',
+    highlights: [
+      'OG badge for the first 50 sign-ups — limited and permanent',
+      'Earnable badges: Verified, Retro Linked, Wordsmith, Prolific, Centurion, Connector, Social Butterfly, Popular, Influencer, Community Builder, Pioneer, Collector',
+      'Tap any badge on a profile to see how it was earned',
+      'Sign in to RetroAchievements with username + password (no API key required)',
+      'Web API key still supported as an advanced option for the full achievement feed',
+      'Push notifications toggle no longer crashes on devices without FCM (graceful local fallback)',
+      'Profile cleanup: removed the redundant Pocket card and the Dual OLED plate from banners',
+      'Replaced the generic shield icon with your earned badges',
+      'Servers verify badge eligibility — clients cannot grant badges to themselves'
+    ]
+  },
+  {
     version: '1.2.0',
     date: '2026-05-19',
     title: 'Profiles, achievements, push, exports',

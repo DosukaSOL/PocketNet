@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.3.0 - Badges, RA login, profile cleanup
+
+v1.3 introduces a server-verified badge system anchored by a limited **OG badge** for the first 50 sign-ups, simplifies the RetroAchievements link flow to plain username + password, fixes the push toggle on devices without FCM, and cleans up the profile header.
+
+### New features
+
+- **OG badge — first 50 only.** Anyone who completes onboarding while fewer than 50 OGs exist is awarded the permanent OG badge. The counter is enforced inside a SECURITY DEFINER Postgres function, so the cap cannot be bypassed by the client.
+- **Earnable badges.** 13 badges total, awarded server-side based on real data: Verified, Retro Linked, Wordsmith, Prolific, Centurion, Connector, Social Butterfly, Popular, Influencer, Community Builder, Pioneer, Collector. Tap any badge on a profile to see what it means and how it was earned.
+- **RetroAchievements login with username + password.** The settings card now defaults to a simple sign-in form. PocketNet hands the password to RA over HTTPS once and immediately discards it — only the username and session token are stored owner-only in `user_secrets`. The Web API key flow is still available as an "Advanced" option for the full achievement feed.
+- **Profile header cleanup.** Removed the redundant Pocket card section, the random "Dual OLED" plate that appeared in banners, and the unverified-looking orange shield icon.
+
+### Fixes
+
+- **Push toggle works on Android devices without FCM.** Builds shipped without Firebase credentials previously crashed when fetching an Expo push token. We now catch the failure, persist a synthetic local-device marker, and keep the toggle state correct so in-app and scheduled notifications still work. Remote pushes resume automatically once FCM is configured.
+
+### Security
+
+- Badges can only be granted through `public.claim_og_badge()` and `public.award_badge(text)` SECURITY DEFINER RPCs. Both verify eligibility against real data (post counts, friend counts, profile completeness, etc.) before mutating `profiles.badges`. Anonymous role is revoked from both functions.
+- `user_secrets` now stores `ra_username` + `ra_token` in addition to the existing `ra_web_api_key`. RLS keeps the row owner-only. The RA password is never written to Supabase, AsyncStorage, or logs.
+- Push token fallback uses a `local:<platform>:<timestamp>` marker — server-side fan-out can safely ignore non-Expo tokens.
+
+### Migrations
+
+- `supabase/migrations/20260519120000_pocketnet_v13_badges.sql` — adds `profiles.badges text[]`, extends `user_secrets` with `ra_token` and `ra_username`, and ships the `claim_og_badge` and `award_badge` SECURITY DEFINER RPCs.
+
 ## 1.2.0 - Profiles, achievements, push, exports
 
 v1.2 turns the profile into the heart of the app. Profile headers now surface six tappable stats — posts, replies, friends, followers, communities, achievements — backed by RetroAchievements integration, a privacy lock for sensitive profiles, push notifications opt-in, and a pixel-perfect profile-card exporter.

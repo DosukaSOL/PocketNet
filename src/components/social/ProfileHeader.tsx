@@ -6,7 +6,6 @@ import {
   Heart,
   MessageSquare,
   RadioTower,
-  ShieldCheck,
   Trophy,
   Users
 } from 'lucide-react-native';
@@ -15,10 +14,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Avatar, Badge, Button, GlowCard, Row, SegmentedTabs, Stack } from '@/components/ui';
 import { DeviceBadge, FrontendBadge } from '@/components/device';
-import { SetupCard } from '@/components/social/SetupCard';
+import { ProfileBadgeStrip } from '@/components/social/ProfileBadgeStrip';
 import { ProfileSocialLinks } from '@/components/social/ProfileSocialLinks';
 import { colors, gradients, radius, shadows, spacing } from '@/design/tokens';
-import { getDeviceProfile, isDualScreenDevice } from '@/lib/devices';
+import { isDualScreenDevice } from '@/lib/devices';
 import type { Profile } from '@/types/domain';
 
 export type ProfileTab = 'posts' | 'replies' | 'friends' | 'followers' | 'communities' | 'achievements';
@@ -74,7 +73,6 @@ export function ProfileHeader({
   onReport?: () => void;
 }) {
   const dualScreen = isDualScreenDevice(profile.favoriteHandheld);
-  const device = getDeviceProfile(profile.favoriteHandheld);
   const actionLabel = hasIncomingRequest
     ? 'Accept'
     : isFriend
@@ -93,9 +91,6 @@ export function ProfileHeader({
             <LinearGradient colors={dualScreen ? gradients.focus : gradients.hero} style={StyleSheet.absoluteFill} />
           )}
           <View style={styles.bannerOverlay} />
-          <View style={[styles.devicePlate, { borderColor: `${device.accentColor}66` }]}>
-            <AppText variant="metadata" color={colors.textSecondary}>{device.badgeLabel}</AppText>
-          </View>
         </View>
 
         <View style={styles.identity}>
@@ -113,12 +108,12 @@ export function ProfileHeader({
               <AppText variant="heroTitle" numberOfLines={1} style={styles.name}>
                 {profile.displayName}
               </AppText>
-              {dualScreen ? <ShieldCheck color={colors.focus} size={18} /> : null}
               {profile.isPrivate ? <Badge label="Private" tone="warning" compact /> : null}
             </Row>
             <AppText variant="caption" color={colors.textMuted}>
               @{profile.username}
             </AppText>
+            <ProfileBadgeStrip badges={profile.badges} />
           </Stack>
         </View>
 
@@ -207,8 +202,6 @@ export function ProfileHeader({
         </Row>
       </GlowCard>
 
-      <SetupCard profile={profile} compact />
-
       {activeTab && onTabChange ? (
         <SegmentedTabs value={activeTab} onChange={onTabChange} tabs={PROFILE_TABS} />
       ) : null}
@@ -266,16 +259,6 @@ const styles = StyleSheet.create({
   bannerOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(4, 6, 13, 0.24)'
-  },
-  devicePlate: {
-    position: 'absolute',
-    right: spacing.md,
-    bottom: spacing.md,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    backgroundColor: colors.overlay,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs
   },
   identity: {
     flexDirection: 'row',

@@ -36,6 +36,7 @@ export const seedProfiles: Profile[] = [
     currentStatus: 'Testing a clean split-screen dashboard.',
     isPrivate: false,
     cardBorder: 'aurora',
+    badges: ['og', 'verified', 'pioneer'],
     createdAt: now,
     updatedAt: now
   },
@@ -60,6 +61,7 @@ export const seedProfiles: Profile[] = [
     currentStatus: 'Tuning scanlines tonight.',
     isPrivate: false,
     cardBorder: 'sunset',
+    badges: ['og', 'wordsmith'],
     createdAt: now,
     updatedAt: now
   },
@@ -84,6 +86,7 @@ export const seedProfiles: Profile[] = [
     currentStatus: 'Sharing a setup card soon.',
     isPrivate: false,
     cardBorder: 'crt',
+    badges: ['og', 'collector'],
     createdAt: now,
     updatedAt: now
   }

@@ -15,7 +15,7 @@
     <img src="https://img.shields.io/badge/build-Expo%20SDK%2055-000020?style=for-the-badge&logo=expo&logoColor=white" alt="Expo SDK 55">
     <img src="https://img.shields.io/badge/backend-Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
     <img src="https://img.shields.io/badge/release-APK%20first-4D7CFF?style=for-the-badge" alt="APK first">
-    <img src="https://img.shields.io/badge/status-v1.2%20stable-7C3AED?style=for-the-badge" alt="v1.2 stable">
+    <img src="https://img.shields.io/badge/status-v1.3%20stable-7C3AED?style=for-the-badge" alt="v1.3 stable">
   </p>
 
   <p>
@@ -46,7 +46,15 @@ PocketNet is standalone and is not affiliated with AYN, Cocoon, Daijisho, ES-DE,
 
 ## Beta Status — What Works & What Doesn't
 
-PocketNet **v1.2** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+PocketNet **v1.3** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+
+### What's new in v1.3
+
+- **OG badge — first 50 only.** Anyone who completes onboarding while fewer than 50 OGs exist is awarded the permanent OG badge. The 50-slot cap is enforced inside a SECURITY DEFINER Postgres function so the client cannot exceed it.
+- **Earnable badges.** 13 badges total — Verified, Retro Linked, Wordsmith, Prolific, Centurion, Connector, Social Butterfly, Popular, Influencer, Community Builder, Pioneer, Collector — awarded server-side against real data (post counts, friend counts, profile completeness, etc.). Tap any badge on a profile to see what it means and how it was earned.
+- **RetroAchievements login with username + password.** The settings card now defaults to a simple sign-in form. The password is sent to RA over HTTPS once and immediately discarded; only the username and session token are stored owner-only in `user_secrets`. The Web API key flow is still available as an "Advanced" option for the full achievement feed.
+- **Push toggle on devices without FCM.** Standalone Android builds without Firebase credentials previously crashed when fetching an Expo push token. We now catch the failure, persist a synthetic local-device marker, and keep the toggle state correct so in-app and scheduled notifications still work.
+- **Profile header cleanup.** Removed the redundant Pocket card section, the "Dual OLED" plate in banners, and the unverified-looking orange shield icon — replaced by your earned badges.
 
 ### What's new in v1.2
 

@@ -1,18 +1,32 @@
 /**
  * RetroAchievements thin wrapper.
  *
- * Uses the public RA Web API:  https://retroachievements.org/API/
+ * Two entry points:
  *
- * Any user's web API key (claimed at https://retroachievements.org/controlpanel.php)
- * can query *any other* user's public data — that's how cocoon and most
- * community frontends do it.
+ *   1. `loginRa(username, password)` — POSTs to the RA legacy connect endpoint
+ *      `dorequest.php?r=login2` and returns the user's auth Token (RA never
+ *      returns the user's Web API key over this endpoint). We hand the
+ *      password to RA over HTTPS and immediately discard it; only the username
+ *      + token are persisted in `user_secrets` (owner-only RLS).
  *
- * We never log the API key and never embed it in shared URLs.
+ *   2. `verifyRaAccount({ username, apiKey })` — the original Web API key
+ *      flow, kept as an "advanced" option so power users who already have a
+ *      key can use it without a password.
+ *
+ * Fetching profile + achievements requires either:
+ *   - a Web API key (preferred — full data), or
+ *   - the connect Token returned by `loginRa` (limited — score, rank, recent
+ *     unlocks via `dorequest.php?r=unlocks`).
+ *
+ * We never log secrets and never embed them in shared URLs.
  */
 
-const BASE = 'https://retroachievements.org/API';
+const WEB_BASE = 'https://retroachievements.org/API';
+const CONNECT_BASE = 'https://retroachievements.org/dorequest.php';
 
-type RaCreds = { username: string; apiKey: string };
+export type RaCredsKey = { kind: 'apiKey'; username: string; apiKey: string };
+export type RaCredsToken = { kind: 'token'; username: string; token: string };
+export type RaCreds = RaCredsKey | RaCredsToken;
 
 export type RaProfile = {
   user: string;
@@ -35,7 +49,14 @@ export type RaAchievement = {
   gameIcon?: string;
 };
 
-function authQuery(creds: RaCreds, extra: Record<string, string | number>) {
+export type RaLoginResult = {
+  username: string;
+  token: string;
+  score: number;
+  softcoreScore: number;
+};
+
+function authQueryKey(creds: RaCredsKey, extra: Record<string, string | number>) {
   const params = new URLSearchParams({ z: creds.username, y: creds.apiKey });
   for (const [k, v] of Object.entries(extra)) {
     params.set(k, String(v));
@@ -43,8 +64,12 @@ function authQuery(creds: RaCreds, extra: Record<string, string | number>) {
   return params.toString();
 }
 
-async function call<T>(path: string, creds: RaCreds, extra: Record<string, string | number>): Promise<T> {
-  const url = `${BASE}/${path}?${authQuery(creds, extra)}`;
+async function callWeb<T>(
+  path: string,
+  creds: RaCredsKey,
+  extra: Record<string, string | number>
+): Promise<T> {
+  const url = `${WEB_BASE}/${path}?${authQueryKey(creds, extra)}`;
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!res.ok) {
     throw new Error(`RetroAchievements ${path} failed (${res.status})`);
@@ -53,10 +78,55 @@ async function call<T>(path: string, creds: RaCreds, extra: Record<string, strin
   return data as T;
 }
 
+async function callConnect<T>(
+  request: string,
+  body: Record<string, string>
+): Promise<T> {
+  const form = new URLSearchParams({ r: request, ...body });
+  const res = await fetch(CONNECT_BASE, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: form.toString()
+  });
+  if (!res.ok) {
+    throw new Error(`RetroAchievements ${request} failed (${res.status})`);
+  }
+  const json = (await res.json()) as Record<string, unknown>;
+  if (json.Success === false) {
+    const reason = typeof json.Error === 'string' ? json.Error : 'RetroAchievements rejected the request.';
+    throw new Error(reason);
+  }
+  return json as T;
+}
+
+/**
+ * Authenticates against RA with a username + password. Returns the connect
+ * Token. The password is sent to RA over HTTPS once and is NOT persisted by
+ * PocketNet under any circumstance.
+ */
+export async function loginRa(username: string, password: string): Promise<RaLoginResult> {
+  const u = username.trim();
+  if (!u) throw new Error('Enter your RetroAchievements username.');
+  if (!password) throw new Error('Enter your RetroAchievements password.');
+  const res = await callConnect<Record<string, unknown>>('login2', { u, p: password });
+  if (!res.Token) {
+    throw new Error('RetroAchievements did not return an auth token.');
+  }
+  return {
+    username: String(res.User ?? u),
+    token: String(res.Token),
+    score: toNumber(res.Score),
+    softcoreScore: toNumber(res.SoftcoreScore)
+  };
+}
+
 /** Validates a username + API key pair by hitting GetUserSummary. */
-export async function verifyRaAccount(creds: RaCreds, targetUser?: string): Promise<RaProfile> {
+export async function verifyRaAccount(creds: RaCredsKey, targetUser?: string): Promise<RaProfile> {
   const user = targetUser ?? creds.username;
-  const summary = await call<Record<string, unknown>>('API_GetUserSummary.php', creds, {
+  const summary = await callWeb<Record<string, unknown>>('API_GetUserSummary.php', creds, {
     u: user,
     g: 0,
     a: 0
@@ -75,13 +145,13 @@ export async function verifyRaAccount(creds: RaCreds, targetUser?: string): Prom
   };
 }
 
-/** Recent achievements (up to `count`) for any RA user. */
+/** Recent achievements (up to `count`) for any RA user. Requires API key creds. */
 export async function fetchRecentAchievements(
-  creds: RaCreds,
+  creds: RaCredsKey,
   targetUser: string,
   count = 50
 ): Promise<RaAchievement[]> {
-  const rows = await call<Record<string, unknown>[]>(
+  const rows = await callWeb<Record<string, unknown>[]>(
     'API_GetUserRecentAchievements.php',
     creds,
     { u: targetUser, m: 60 * 24 * 365 * 5, c: count } // last 5y, capped count
@@ -103,6 +173,19 @@ export async function fetchRecentAchievements(
   }));
 }
 
+/**
+ * Connect-token "ping" used to validate that a stored token is still good.
+ * RA's `ping` endpoint accepts `u` + `t` and returns Success.
+ */
+export async function pingRa(creds: RaCredsToken): Promise<boolean> {
+  try {
+    await callConnect('ping', { u: creds.username, t: creds.token });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function toNumber(value: unknown): number {
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
@@ -111,3 +194,4 @@ function toNumber(value: unknown): number {
   }
   return 0;
 }
+

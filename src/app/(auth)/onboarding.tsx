@@ -32,6 +32,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { FRONTENDS, HANDHELDS, SAMPLE_GAMES, SYSTEMS } from '@/lib/catalog';
 import { pickImage, uploadImage } from '@/lib/media';
 import { requestPushPermission, savePushToken } from '@/lib/push';
+import { awardBadge, claimOgBadge } from '@/lib/badgeClaim';
 
 type StepKey = 'avatar' | 'banner' | 'about' | 'device' | 'systems' | 'socials' | 'preview';
 
@@ -169,6 +170,11 @@ export default function OnboardingScreen() {
       } catch {
         // ignore — push is optional
       }
+      // Best-effort: claim launch + completion badges. All failures swallowed.
+      void claimOgBadge();
+      void awardBadge('verified');
+      void awardBadge('completionist');
+      void awardBadge('pioneer');
       router.replace('/(tabs)/home');
     } catch (error) {
       Alert.alert('Could not save onboarding', error instanceof Error ? error.message : 'Try again.');

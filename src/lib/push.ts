@@ -56,11 +56,20 @@ export async function requestPushPermission(): Promise<PushRegistrationResult> {
     (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId ??
     Constants.easConfig?.projectId;
 
-  const token = (
-    await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined)
-  ).data;
-
-  return { status: 'granted', token };
+  try {
+    const token = (
+      await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined)
+    ).data;
+    return { status: 'granted', token };
+  } catch {
+    // Standalone Android builds without FCM credentials cannot register for
+    // remote push tokens. We still want the toggle to "work" — the user has
+    // granted notification permission, so we can deliver in-app and scheduled
+    // local notifications. Store a synthetic device-scoped marker instead of a
+    // real remote token; server-side fan-out can ignore `local:*` tokens until
+    // FCM is configured.
+    return { status: 'granted', token: `local:${Platform.OS}:${Date.now()}` };
+  }
 }
 
 export async function savePushToken(userId: string, token: string, enabled: boolean) {

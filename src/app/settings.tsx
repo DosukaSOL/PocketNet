@@ -16,14 +16,15 @@ import {
 } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { AppText, Badge, Button, GlowCard, Row, Screen, Stack, TextField } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useThemeChoice, type LayoutPreference } from '@/features/theme/ThemeProvider';
 import { RELEASES } from '@/lib/releases';
 import { getPushEnabled, requestPushPermission, savePushToken, setPushEnabled } from '@/lib/push';
-import { verifyRaAccount } from '@/lib/retroachievements';
+import { loginRa, verifyRaAccount } from '@/lib/retroachievements';
+import { awardBadge } from '@/lib/badgeClaim';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, themeOptions, type ThemeName } from '@/design/tokens';
 
@@ -39,7 +40,9 @@ export default function SettingsScreen() {
   const { theme, setTheme, layout, setLayout, pendingRestart } = useThemeChoice();
 
   const [raUsername, setRaUsername] = useState(profile?.raUsername ?? '');
+  const [raPassword, setRaPassword] = useState('');
   const [raKey, setRaKey] = useState('');
+  const [raAdvancedOpen, setRaAdvancedOpen] = useState(false);
   const [raSaving, setRaSaving] = useState(false);
   const [raError, setRaError] = useState<string>();
   const [raMessage, setRaMessage] = useState<string>();
@@ -71,6 +74,45 @@ export default function SettingsScreen() {
     }
   }
 
+  async function handleLoginRa() {
+    if (!profile?.id) return;
+    const trimmedUser = raUsername.trim();
+    if (!trimmedUser || !raPassword) {
+      setRaError('Enter your RetroAchievements username and password.');
+      return;
+    }
+    setRaSaving(true);
+    setRaError(undefined);
+    setRaMessage(undefined);
+    try {
+      const result = await loginRa(trimmedUser, raPassword);
+      if (!supabase) {
+        throw new Error('Supabase is not configured on this build.');
+      }
+      const { error: secretError } = await supabase.from('user_secrets').upsert(
+        {
+          user_id: profile.id,
+          ra_username: result.username,
+          ra_token: result.token,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: 'user_id' }
+      );
+      if (secretError) throw secretError;
+      await patchProfile({ raUsername: result.username });
+      // Best-effort: claim the retro-linked badge.
+      void awardBadge('retro-linked');
+      setRaMessage(
+        `Logged in as @${result.username} · ${result.score.toLocaleString()} points (hardcore) · ${result.softcoreScore.toLocaleString()} (softcore).`
+      );
+      setRaPassword('');
+    } catch (error) {
+      setRaError(error instanceof Error ? error.message : 'Could not log in to RetroAchievements.');
+    } finally {
+      setRaSaving(false);
+    }
+  }
+
   async function handleSaveRa() {
     if (!profile?.id) return;
     const trimmedUser = raUsername.trim();
@@ -83,13 +125,14 @@ export default function SettingsScreen() {
     setRaError(undefined);
     setRaMessage(undefined);
     try {
-      const summary = await verifyRaAccount({ username: trimmedUser, apiKey: trimmedKey });
+      const summary = await verifyRaAccount({ kind: 'apiKey', username: trimmedUser, apiKey: trimmedKey });
       if (!supabase) {
         throw new Error('Supabase is not configured on this build.');
       }
       const { error: secretError } = await supabase.from('user_secrets').upsert(
         {
           user_id: profile.id,
+          ra_username: trimmedUser,
           ra_web_api_key: trimmedKey,
           updated_at: new Date().toISOString()
         },
@@ -97,6 +140,7 @@ export default function SettingsScreen() {
       );
       if (secretError) throw secretError;
       await patchProfile({ raUsername: trimmedUser });
+      void awardBadge('retro-linked');
       setRaMessage(
         `Linked @${summary.user} · ${summary.totalPoints.toLocaleString()} points · rank #${summary.rank ?? '—'}.`
       );
@@ -120,6 +164,7 @@ export default function SettingsScreen() {
       await patchProfile({ raUsername: undefined });
       setRaUsername('');
       setRaKey('');
+      setRaPassword('');
       setRaMessage('RetroAchievements unlinked.');
     } catch (error) {
       setRaError(error instanceof Error ? error.message : 'Could not unlink account.');
@@ -193,8 +238,9 @@ export default function SettingsScreen() {
           <Stack gap={2} style={styles.groupCopy}>
             <AppText variant="sectionTitle">RetroAchievements</AppText>
             <AppText color={colors.textSecondary}>
-              Link your RA account to show your achievements on your profile. Your Web API key is stored
-              owner-only and never exposed to other players.
+              Sign in with your RetroAchievements username and password to link your account. PocketNet
+              hands the password to RA once over HTTPS and never stores it — only the username and
+              session token are saved, owner-only.
             </AppText>
             {profile?.raUsername ? (
               <AppText variant="metadata" color={colors.textMuted}>Linked as @{profile.raUsername}</AppText>
@@ -211,29 +257,65 @@ export default function SettingsScreen() {
             placeholder="RetroAchievements username"
           />
           <TextField
-            label="RA Web API key"
-            value={raKey}
-            onChangeText={setRaKey}
+            label="RA password"
+            value={raPassword}
+            onChangeText={setRaPassword}
             autoCapitalize="none"
             autoCorrect={false}
             secureTextEntry
-            placeholder="Paste your Web API key"
+            placeholder="Your RetroAchievements password"
           />
           {raError ? <AppText variant="caption" color={colors.danger}>{raError}</AppText> : null}
           {raMessage ? <AppText variant="caption" color={colors.success}>{raMessage}</AppText> : null}
           <Row>
             <Button
-              label={profile?.raUsername ? 'Update link' : 'Link account'}
+              label={profile?.raUsername ? 'Re-link with password' : 'Sign in to RetroAchievements'}
               loading={raSaving}
-              onPress={() => void handleSaveRa()}
+              onPress={() => void handleLoginRa()}
             />
             {profile?.raUsername ? (
               <Button label="Unlink" variant="ghost" compact onPress={() => void handleUnlinkRa()} />
             ) : null}
           </Row>
-          <AppText variant="metadata" color={colors.textMuted}>
-            Get your Web API key from retroachievements.org → Settings → Keys.
-          </AppText>
+
+          <Pressable onPress={() => setRaAdvancedOpen((v) => !v)} hitSlop={8}>
+            <AppText variant="metadata" color={colors.textMuted}>
+              {raAdvancedOpen ? 'Hide advanced (Web API key) ▾' : 'Advanced: use a Web API key instead ▸'}
+            </AppText>
+          </Pressable>
+          {raAdvancedOpen ? (
+            <Stack gap={spacing.xs}>
+              <TextField
+                label="RA Web API key"
+                value={raKey}
+                onChangeText={setRaKey}
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry
+                placeholder="Paste your Web API key"
+              />
+              <Row>
+                <Button
+                  label="Link with API key"
+                  variant="secondary"
+                  loading={raSaving}
+                  onPress={() => void handleSaveRa()}
+                />
+                <Button
+                  label="Get a key"
+                  variant="ghost"
+                  compact
+                  onPress={() =>
+                    void Linking.openURL('https://retroachievements.org/controlpanel.php')
+                  }
+                />
+              </Row>
+              <AppText variant="metadata" color={colors.textMuted}>
+                A Web API key unlocks the full achievement feed. Get yours from
+                retroachievements.org → Settings → Keys.
+              </AppText>
+            </Stack>
+          ) : null}
         </Stack>
       </GlowCard>
 

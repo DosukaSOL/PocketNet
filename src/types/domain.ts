@@ -33,6 +33,7 @@ export type Profile = {
   raUsername?: string;
   isPrivate: boolean;
   cardBorder: string;
+  badges: string[];
   lastSeenAt?: string;
   createdAt: string;
   updatedAt: string;
