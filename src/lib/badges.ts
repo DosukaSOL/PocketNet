@@ -8,7 +8,7 @@
  * Order matters — earlier entries render first on the profile header.
  */
 
-export type BadgeTone = 'cyan' | 'purple' | 'pink' | 'focus' | 'warning' | 'lime';
+export type BadgeTone = 'cyan' | 'purple' | 'pink' | 'focus' | 'warning' | 'lime' | 'dev';
 
 export type BadgeDefinition = {
   id: string;
@@ -18,9 +18,20 @@ export type BadgeDefinition = {
   tone: BadgeTone;
   /** Server-evaluated condition explained for the user. */
   howTo: string;
+  /** When true, the strip renders this badge with a pulsing glow. */
+  glow?: boolean;
 };
 
 export const BADGES: BadgeDefinition[] = [
+  {
+    id: 'dev',
+    label: 'Developer',
+    description: 'The official developer of PocketNet. There is only one.',
+    emoji: '🐺',
+    tone: 'dev',
+    glow: true,
+    howTo: 'Awarded to @dosuka. This badge is permanently locked to a single account on the server.'
+  },
   {
     id: 'og',
     label: 'OG',

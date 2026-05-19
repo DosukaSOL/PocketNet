@@ -21,6 +21,18 @@ export async function awardBadge(badgeId: string): Promise<boolean> {
 }
 
 /**
+ * Client wrapper for the server-side `claim_dev_badge` RPC. The server checks
+ * the caller's username against a fixed value before mutating badges — this
+ * function will only ever succeed for the developer account.
+ */
+export async function claimDevBadge(): Promise<boolean> {
+  if (!supabase) return false;
+  const { data, error } = await supabase.rpc('claim_dev_badge');
+  if (error) return false;
+  return Boolean(data);
+}
+
+/**
  * Best-effort: walk the achievable badges and ask the server to award any the
  * user has already earned. The server enforces eligibility; the client only
  * supplies candidate IDs. Returns the list of badges that were actually

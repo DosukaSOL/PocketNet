@@ -64,7 +64,7 @@ export default function ProfileScreen() {
         followerCount={followers.length}
         communityCount={memberCommunities.length}
         achievementCount={ra.achievements.length}
-        achievementPoints={ra.points}
+        achievementPoints={ra.points || profile?.raPoints || undefined}
         activeTab={tab}
         onTabChange={setTab}
         onEdit={() => router.push('/edit-profile')}

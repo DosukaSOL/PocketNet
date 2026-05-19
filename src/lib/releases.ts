@@ -14,6 +14,18 @@ export type ReleaseEntry = {
 
 export const RELEASES: ReleaseEntry[] = [
   {
+    version: '1.3.1',
+    date: '2026-05-19',
+    title: 'RA login fix, score sync, notifications, DEV badge',
+    highlights: [
+      'Fixed RetroAchievements login (403) — we now send a proper User-Agent so the WAF lets us through',
+      'Your RA score now syncs to your profile on login and refreshes whenever you open the app',
+      'Per-user notification preferences — pick which friends/follows ping you for posts, achievements, comments, or new friends',
+      'New DEV badge: locked to @dosuka on the server, with a pulsing glow you can\'t miss',
+      'OG and Collector badges fully wired server-side (no more silent failures)'
+    ]
+  },
+  {
     version: '1.3.0',
     date: '2026-05-19',
     title: 'Badges, RA login, profile cleanup',

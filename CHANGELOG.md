@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.3.1 - RA login fix, score sync, notifications, DEV badge
+
+A bug-fix-plus release. The big one: **RetroAchievements login was returning HTTP 403** on real devices because RA's WAF blocks the default React Native okhttp User-Agent. We now send an explicit `PocketNet/1.3.1` UA on every call to retroachievements.org. v1.3.1 also wires the RA score directly into the profile (so it stays up to date even without a Web API key), adds per-friend notification preferences, and introduces a single-account DEV badge with a pulsing glow.
+
+### New features
+
+- **RA score sync.** When you log in to RetroAchievements your hardcore + softcore score is written to your profile (`ra_points`, `ra_softcore_points`). When you re-open the app the score refreshes in the background via the connect-token `login2` flow — no password needed.
+- **Per-user notification preferences.** On any friend or follow's profile, pick exactly which pings you want: new posts, new achievements, new comments, or new friend connections. Stored owner-only in `notification_preferences` with RLS.
+- **DEV badge.** A new permanently-glowing badge for the developer. It is cryptographically locked to a single username on the server (`claim_dev_badge()` rejects everyone else) and renders with a pulsing violet halo on the profile.
+- **OG + Collector backfill.** Pre-existing accounts that should have those badges now do — `award_badge('verified')` and `award_badge('collector')` now exist server-side (they were missing in v1.3.0 so those calls silently no-op'd).
+
+### Fixes
+
+- **RetroAchievements login no longer returns 403.** Root cause: Cloudflare WAF rejecting the default RN okhttp User-Agent. Fix: every request to `retroachievements.org` now sends `User-Agent: PocketNet/1.3.1 (+https://github.com/DosukaSOL/PocketNet)`. Verified via curl that this UA returns the expected JSON 401 on bad creds (instead of an HTML 403).
+- **Empty score on token-only login.** Profiles with an RA token but no Web API key now display the cached score from `profiles.ra_points` instead of "—".
+
+### Security
+
+- The `claim_dev_badge()` RPC is SECURITY DEFINER and selects the caller's username from `profiles` via `auth.uid()` — there is no way to grant the DEV badge by spoofing a username at the API layer.
+- `award_badge('dev')` is explicitly rejected: the generic award path cannot grant the DEV badge under any circumstance.
+- `notification_preferences` has RLS enabled with owner-only SELECT + FOR ALL policies (`user_id = auth.uid()`).
+- The RA User-Agent header explicitly identifies the app + source URL — no spoofing of other clients.
+- The RA password is still never persisted; only `ra_username` + `ra_token` go to `user_secrets`.
+
+### Migrations
+
+- `supabase/migrations/20260519130000_pocketnet_v131_dev_notifs_rapoints.sql`
+  - Adds `ra_points`, `ra_softcore_points`, `ra_synced_at` columns to `profiles`.
+  - Creates `notification_preferences` table + owner-only RLS policies.
+  - Adds `claim_dev_badge()` SECURITY DEFINER (locked to a single username).
+  - Re-creates `award_badge(text)` with `verified` and `collector` branches and an explicit `dev` deny.
+  - Backfills the DEV + OG badges for the developer account.
+
 ## 1.3.0 - Badges, RA login, profile cleanup
 
 v1.3 introduces a server-verified badge system anchored by a limited **OG badge** for the first 50 sign-ups, simplifies the RetroAchievements link flow to plain username + password, fixes the push toggle on devices without FCM, and cleans up the profile header.

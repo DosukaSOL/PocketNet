@@ -31,6 +31,9 @@ export type Profile = {
   currentGame?: string;
   currentStatus?: string;
   raUsername?: string;
+  raPoints?: number;
+  raSoftcorePoints?: number;
+  raSyncedAt?: string;
   isPrivate: boolean;
   cardBorder: string;
   badges: string[];
@@ -159,6 +162,9 @@ export type UpdateProfileInput = Partial<
     | 'raUsername'
     | 'isPrivate'
     | 'cardBorder'
+    | 'raPoints'
+    | 'raSoftcorePoints'
+    | 'raSyncedAt'
   >
 > & {
   avatarUri?: string;

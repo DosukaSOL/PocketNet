@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Alert, StyleSheet } from 'react-native';
 
 import { ProfileHeader, type ProfileTab } from '@/components/ProfileHeader';
+import { NotificationPreferencesCard } from '@/components/social/NotificationPreferencesCard';
 import { ProfileTabContent } from '@/components/social/ProfileTabContent';
 import { Button, EmptyState, Row, Screen } from '@/components/ui';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -126,7 +127,7 @@ export default function UserScreen() {
         followerCount={followers.length}
         communityCount={memberCommunities.length}
         achievementCount={ra.achievements.length}
-        achievementPoints={ra.points}
+        achievementPoints={ra.points || target.raPoints || undefined}
         activeTab={tab}
         onTabChange={setTab}
         onFriend={() => void sendFriendRequest(target.id)}
@@ -134,6 +135,9 @@ export default function UserScreen() {
         onBlock={handleBlock}
         onReport={handleReport}
       />
+      {!isCurrentUser && (isFriend || isFollower) ? (
+        <NotificationPreferencesCard targetId={target.id} targetName={target.displayName} />
+      ) : null}
       <ProfileTabContent
         profile={target}
         activeTab={tab}

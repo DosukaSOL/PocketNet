@@ -46,7 +46,15 @@ PocketNet is standalone and is not affiliated with AYN, Cocoon, Daijisho, ES-DE,
 
 ## Beta Status — What Works & What Doesn't
 
-PocketNet **v1.3** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+PocketNet **v1.3.1** is the latest stable release. This is an honest snapshot for anyone downloading the APK.
+
+### What's new in v1.3.1
+
+- **RetroAchievements login fix.** v1.3.0 was returning HTTP 403 on real devices because RA's WAF rejects the default React Native okhttp User-Agent. v1.3.1 sends an explicit `PocketNet/1.3.1 (+https://github.com/DosukaSOL/PocketNet)` UA on every call to retroachievements.org. Verified with curl that bad credentials now return the expected JSON 401 instead of an HTML 403.
+- **RA score syncs to your profile.** Your hardcore + softcore score is written to `profiles.ra_points` / `profiles.ra_softcore_points` on login and refreshes whenever you open the app (using the stored connect token — no password is re-sent). Profiles without a Web API key now show the cached score instead of "—".
+- **Per-user notification preferences.** On any friend or follow's profile, pick exactly which pings you want from that person: posts, achievements, comments, or new friend connections. Stored owner-only in `notification_preferences` with RLS.
+- **DEV badge.** A new permanently-glowing badge for the developer (`@dosuka`). The eligibility check lives inside `claim_dev_badge()` SECURITY DEFINER on the server — the badge cannot be granted to any other account, and the generic `award_badge()` path explicitly refuses the `dev` id.
+- **OG + Collector backfill.** `award_badge('verified')` and `award_badge('collector')` were missing in v1.3.0 so onboarding silently no-op'd those calls. v1.3.1 adds both branches server-side.
 
 ### What's new in v1.3
 

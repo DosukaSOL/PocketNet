@@ -99,7 +99,12 @@ export default function SettingsScreen() {
         { onConflict: 'user_id' }
       );
       if (secretError) throw secretError;
-      await patchProfile({ raUsername: result.username });
+      await patchProfile({
+        raUsername: result.username,
+        raPoints: result.score,
+        raSoftcorePoints: result.softcoreScore,
+        raSyncedAt: new Date().toISOString()
+      });
       // Best-effort: claim the retro-linked badge.
       void awardBadge('retro-linked');
       setRaMessage(

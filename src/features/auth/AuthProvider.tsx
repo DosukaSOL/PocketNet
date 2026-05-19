@@ -14,6 +14,8 @@ import { AppState } from 'react-native';
 import { profileFromRow, profileToRowPatch } from '@/lib/mappers';
 import { previewUserId, seedProfiles } from '@/lib/mockData';
 import { hasSupabaseConfig, supabase } from '@/lib/supabase';
+import { claimDevBadge, claimOgBadge } from '@/lib/badgeClaim';
+import { refreshRaScore } from '@/lib/retroachievements';
 import type { Profile, UpdateProfileInput } from '@/types/domain';
 
 type AuthContextValue = {
@@ -227,6 +229,69 @@ export function AuthProvider({ children }: PropsWithChildren) {
   // Presence heartbeat: ping the server every minute and on app foreground so
   // friends can show an "online" dot. Best-effort — failures are silent.
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Auto-claim DEV/OG badges + refresh RA score whenever a fresh session +
+  // profile becomes available. The server enforces eligibility for both badge
+  // RPCs, so this is safe to call for every signed-in user.
+  const badgeWarmupRanRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!supabase || isPreviewMode) return;
+    if (!session?.user || !profile?.id) return;
+    if (badgeWarmupRanRef.current === profile.id) return;
+    badgeWarmupRanRef.current = profile.id;
+    void (async () => {
+      try {
+        await claimOgBadge();
+      } catch {
+        /* best-effort */
+      }
+      try {
+        await claimDevBadge();
+      } catch {
+        /* best-effort — server rejects non-dosuka users */
+      }
+      // Refresh RA score in the background if a token is on file.
+      try {
+        if (!profile.raUsername) return;
+        const { data: secret } = await supabase!
+          .from('user_secrets')
+          .select('ra_username, ra_token')
+          .eq('user_id', profile.id)
+          .maybeSingle();
+        const token = secret?.ra_token as string | undefined;
+        const username = (secret?.ra_username as string | undefined) ?? profile.raUsername;
+        if (!token || !username) return;
+        const refreshed = await refreshRaScore({ kind: 'token', username, token });
+        if (!refreshed) return;
+        const patch: Record<string, unknown> = {
+          ra_points: refreshed.score,
+          ra_softcore_points: refreshed.softcoreScore,
+          ra_synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        await supabase!.from('profiles').update(patch).eq('id', profile.id);
+        // If RA rotated the token, persist the new one.
+        if (refreshed.token !== token) {
+          await supabase!
+            .from('user_secrets')
+            .update({ ra_token: refreshed.token, updated_at: new Date().toISOString() })
+            .eq('user_id', profile.id);
+        }
+        // Refresh the in-memory profile.
+        setProfile((current) =>
+          current && current.id === profile.id
+            ? {
+                ...current,
+                raPoints: refreshed.score,
+                raSoftcorePoints: refreshed.softcoreScore,
+                raSyncedAt: new Date().toISOString()
+              }
+            : current
+        );
+      } catch {
+        /* best-effort */
+      }
+    })();
+  }, [isPreviewMode, profile, session]);
   useEffect(() => {
     if (!supabase || !session?.user || isPreviewMode) {
       return;

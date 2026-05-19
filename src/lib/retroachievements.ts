@@ -24,6 +24,12 @@
 const WEB_BASE = 'https://retroachievements.org/API';
 const CONNECT_BASE = 'https://retroachievements.org/dorequest.php';
 
+// RetroAchievements' Cloudflare WAF returns 403 to default React-Native
+// `okhttp/*` User-Agents. Sending an explicit PocketNet UA matches what the
+// rest of the community frontends do (RAIntegration, RetroArch, etc.) and
+// keeps us identifiable.
+const RA_USER_AGENT = 'PocketNet/1.3.1 (+https://github.com/DosukaSOL/PocketNet)';
+
 export type RaCredsKey = { kind: 'apiKey'; username: string; apiKey: string };
 export type RaCredsToken = { kind: 'token'; username: string; token: string };
 export type RaCreds = RaCredsKey | RaCredsToken;
@@ -70,7 +76,9 @@ async function callWeb<T>(
   extra: Record<string, string | number>
 ): Promise<T> {
   const url = `${WEB_BASE}/${path}?${authQueryKey(creds, extra)}`;
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  const res = await fetch(url, {
+    headers: { Accept: 'application/json', 'User-Agent': RA_USER_AGENT }
+  });
   if (!res.ok) {
     throw new Error(`RetroAchievements ${path} failed (${res.status})`);
   }
@@ -87,14 +95,29 @@ async function callConnect<T>(
     method: 'POST',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'User-Agent': RA_USER_AGENT
     },
     body: form.toString()
   });
-  if (!res.ok) {
-    throw new Error(`RetroAchievements ${request} failed (${res.status})`);
+  // RA returns JSON for 200 *and* 401 (invalid creds). Try to parse first so
+  // we can surface a friendly error; fall back to HTTP status otherwise.
+  let json: Record<string, unknown> | null = null;
+  try {
+    json = (await res.json()) as Record<string, unknown>;
+  } catch {
+    json = null;
   }
-  const json = (await res.json()) as Record<string, unknown>;
+  if (!res.ok) {
+    const reason =
+      json && typeof json.Error === 'string'
+        ? (json.Error as string)
+        : `RetroAchievements ${request} failed (${res.status})`;
+    throw new Error(reason);
+  }
+  if (!json) {
+    throw new Error(`RetroAchievements ${request} returned no data.`);
+  }
   if (json.Success === false) {
     const reason = typeof json.Error === 'string' ? json.Error : 'RetroAchievements rejected the request.';
     throw new Error(reason);
@@ -183,6 +206,30 @@ export async function pingRa(creds: RaCredsToken): Promise<boolean> {
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Refresh the cached hardcore/softcore score for a token-linked user. RA's
+ * `login2` request also accepts an existing Token in place of the password,
+ * which is how RetroArch / RAIntegration keep the score up to date without
+ * re-prompting. Returns `null` if the token has been revoked.
+ */
+export async function refreshRaScore(
+  creds: RaCredsToken
+): Promise<{ score: number; softcoreScore: number; token: string } | null> {
+  try {
+    const res = await callConnect<Record<string, unknown>>('login2', {
+      u: creds.username,
+      t: creds.token
+    });
+    return {
+      score: toNumber(res.Score),
+      softcoreScore: toNumber(res.SoftcoreScore),
+      token: typeof res.Token === 'string' ? res.Token : creds.token
+    };
+  } catch {
+    return null;
   }
 }
 
